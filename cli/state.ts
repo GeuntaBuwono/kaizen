@@ -210,13 +210,26 @@ if ($o -match '"pane_id":"([^"]*)"') { & ${q(herdr)} pane run $Matches[1] ${q(ty
     return { cmd: ["tmux", "new-window", "-c", cwd, ...fullCmd], detached: false };
   }
 
-  if (process.env.TERMINAL && Bun.which(process.env.TERMINAL)) {
-    const term = process.env.TERMINAL;
-    if (term.includes("kitty")) return { cmd: [term, "--directory", cwd, ...fullCmd], detached: true };
-    if (term.includes("alacritty")) return { cmd: [term, "--working-directory", cwd, "-e", ...fullCmd], detached: true };
-    if (term.includes("ghostty")) return { cmd: [term, `--working-directory=${cwd}`, "-e", ...fullCmd], detached: true };
-    if (term.includes("foot")) return { cmd: [term, "-D", cwd, ...fullCmd], detached: true };
-    return { cmd: [term, "-e", ...fullCmd], detached: true };
+  // $TERMINAL: a command on PATH, or on macOS an app's name (TERMINAL=Ghostty, iTerm).
+  const term = process.env.TERMINAL;
+  if (term) {
+    const t = term.toLowerCase();
+    const args = t.includes("kitty") ? ["--directory", cwd, ...fullCmd]
+      : t.includes("alacritty") ? ["--working-directory", cwd, "-e", ...fullCmd]
+      : t.includes("ghostty") ? [`--working-directory=${cwd}`, "-e", ...fullCmd]
+      : t.includes("wezterm") ? ["start", "--cwd", cwd, "--", ...fullCmd]
+      : t.includes("foot") ? ["-D", cwd, ...fullCmd]
+      : ["-e", ...fullCmd];
+    if (process.platform !== "darwin") { if (Bun.which(term)) return { cmd: [term, ...args], detached: true }; }
+    else if (t.includes("iterm")) {
+      // iTerm takes a command line, not argv: the line goes into a one-shot script, as
+      // with Terminal below, and iTerm runs `sh <path>`.
+      const script = `f=$(mktemp) && printf 'rm -f "$0"\\n{ cd %s || (exit 127); } && %s\\n${hold}\\n' "$1" "$2" > "$f" && osascript -e "tell application \\"iTerm\\" to create window with default profile command \\"sh $f\\"" -e 'tell application "iTerm" to activate'`;
+      return { cmd: ["/bin/sh", "-c", script, "sh", shq(cwd), line], detached: true };
+    }
+    // On macOS a terminal is an app, started through open (Ghostty's binary cannot open
+    // a window itself). -n: a new instance, so the args reach it when it is already open.
+    else return { cmd: ["open", "-na", term, "--args", ...args], detached: true };
   }
 
   if (hasDisplay && Bun.which("xdg-terminal-exec")) {

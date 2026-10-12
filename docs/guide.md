@@ -131,14 +131,15 @@ kaizen web
 ```
 
 serves the same board on `http://127.0.0.1:7420/` — loopback only, no account — and
-opens it in a Chromium-family browser as an app window when one is installed, otherwise
-in a tab.
+opens it in a tab of your default browser. Set **Open the board in** to `app` in
+`kaizen settings` for a Chromium-family app window instead (no tabs or address bar).
 
 <img src="https://raw.githubusercontent.com/hfadhlullah/kaizen/c858bb6d666a65780d09c06032c8819489b87da5/assets/board.png" alt="kaizen web board" width="760">
 
 Same columns, same files: an idea added here lands in `inbox.md`, a run
 started here opens your agent in a new terminal exactly as `r` does (a new herdr tab
-or tmux window when one of those is running), and the board
+or tmux window when one of those is running; otherwise `$TERMINAL`, which on macOS
+may name an app such as `Ghostty` or `iTerm`), and the board
 redraws as your agents write to disk. Mouse first; the TUI's keys still work. Click a card for its plan, review and
 backlog; `⋯` on a card runs, edits, rejects, abandons or archives. `Clear` on Done sends
 every finished run to the archive (`.kaizen/archive.md`, a list, nothing moves), and

@@ -676,6 +676,11 @@ export async function web(repoDir: string, opts: Opts = {}) {
 // A profile folder gives the window a browser instance of its own (Kaizen Bot's app);
 // on macOS that takes -n, as `open` otherwise hands the args to a running browser.
 export async function openApp(url: string, profile?: string) {
+  // Kaizen Bot's window (a profile) is always an app; the board asks the setting.
+  if (!profile) {
+    const { listSettings } = await import("./settings.ts");
+    if (listSettings(join(import.meta.dir, "..")).rows.find((r) => r.key === "board.open")?.value !== "app") return openDefault(url);
+  }
   const args = [`--app=${url}`, ...(profile ? [`--user-data-dir=${profile}`] : [])];
   const chromes = process.platform === "darwin"
     ? ["Google Chrome", "Chromium", "Microsoft Edge", "Brave Browser"]
@@ -697,6 +702,10 @@ export async function openApp(url: string, profile?: string) {
       }
     }
   } catch { /* fall through to a plain tab */ }
+  return openDefault(url);
+}
+
+async function openDefault(url: string) {
   // `start` is a cmd builtin, not a program, so it has to go through cmd.
   if (process.platform === "win32") {
     try { await Bun.$`${cmdExe()} /c start "" ${url}`.quiet(); return true; } catch { return false; }

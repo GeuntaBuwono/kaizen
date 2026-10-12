@@ -178,6 +178,9 @@ board:
   # not itself a project (no .git, no package.json) is read as a group, and the
   # folders inside it are offered too.
   projects_dir: ""
+  # Where `kaizen web` opens the board: browser (a tab in your default browser) or
+  # app (a Chrome, Edge or Brave window with no tabs or address bar).
+  open: browser
 
 sources:
   # How often the web board checks your request sources (links added in the board's

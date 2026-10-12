@@ -463,6 +463,26 @@ test("nativePath on Windows reads the spellings Git Bash writes into the project
   } finally { Object.defineProperty(process, "platform", platform); }
 });
 
+test("findTerminal on macOS opens $TERMINAL as an app; iTerm through a script", () => {
+  const keys = ["PATH", "TERMINAL", "TMUX", "HERDR_ENV"];
+  const saved = keys.map((k) => process.env[k]);
+  const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
+  try {
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    process.env.PATH = mkdtempSync(join(tmpdir(), "kz-empty-"));
+    delete process.env.TMUX; delete process.env.HERDR_ENV;
+    process.env.TERMINAL = "Ghostty";
+    expect(findTerminal("/p", ["claude", "x"])!.cmd).toEqual(["open", "-na", "Ghostty", "--args", "--working-directory=/p", "-e", "claude", "x"]);
+    process.env.TERMINAL = "iTerm";
+    const i = findTerminal("/p", ["claude", "x"])!;
+    expect(i.cmd[2]).toContain('create window with default profile command');
+    expect(i.cmd.slice(4)).toEqual(["'/p'", "'claude' 'x'"]);
+  } finally {
+    Object.defineProperty(process, "platform", platform);
+    keys.forEach((k, i) => (saved[i] === undefined ? delete process.env[k] : (process.env[k] = saved[i])));
+  }
+});
+
 test("findTerminal on Windows names cmd and PowerShell by full path, so a PATH without System32 still launches", () => {
   const keys = ["PATH", "ComSpec", "SystemRoot", "windir"];
   const saved = keys.map((k) => process.env[k]);
