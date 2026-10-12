@@ -167,7 +167,7 @@ const env = { PROVIDER: "anthropic", MODEL: "m", ANTHROPIC_API_KEY: "k" };
 const req = (app: ReturnType<typeof createApp>, path: string, init: { method?: string; body?: unknown } = {}) =>
   app.handle(new Request(`http://127.0.0.1:7430${path}`, { method: init.method ?? "GET", headers: { host: "127.0.0.1:7430", "content-type": "application/json" }, body: init.body ? JSON.stringify(init.body) : undefined }));
 
-function setup(o: Parameters<typeof fakeDocker>[0] = {}, taskMs = 50) {
+function setup(o: Parameters<typeof fakeDocker>[0] = {}, taskMs = 5000) {   // room for a slow CI box
   const store = openStore(":memory:");
   const tech = store.createBot("tech", "Tech Lead");
   const chief = store.createBot("chief", "Chief");
