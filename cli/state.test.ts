@@ -422,14 +422,15 @@ test("commitPush: commits the run's files only, pushes, and records it; the mess
 test.skipIf(process.platform === "win32")("findTerminal: a running herdr wins, then tmux, else neither; the prompt stays one literal argument", () => {
   const bin = mkdtempSync(join(tmpdir(), "kz-bin-"));
   const stub = (name: string, code: number) => writeFileSync(join(bin, name), `#!/bin/sh\nexit ${code}\n`, { mode: 0o755 });
-  const keys = ["PATH", "HERDR_ENV", "TMUX", "TERMINAL"];
+  const keys = ["PATH", "HERDR_ENV", "TMUX", "TERMINAL", "DISPLAY"];
   const saved = keys.map((k) => process.env[k]);
   try {
     process.env.PATH = bin;
     for (const k of keys.slice(1)) delete process.env[k];
+    process.env.DISPLAY = ":0";   // a desktop session, as on a CI box with none
     const prompt = `/kaizen it's "q" $HOME \`id\`\n\nnote`;
     const full = ["/usr/bin/claude", "--model", "opus", prompt];
-    expect(findTerminal("/p", full)?.cmd[0] ?? "").not.toMatch(/^(sh|tmux)$/);   // neither installed (null with no display)
+    expect(findTerminal("/p", full)?.cmd[0]).not.toMatch(/^(sh|tmux)$/);   // neither installed
     stub("herdr", 1); stub("tmux", 1);
     expect(findTerminal("/p", full)?.cmd[0]).not.toMatch(/^(sh|tmux)$/);   // installed, no server
     process.env.TMUX = "/tmp/x,1,0"; process.env.HERDR_ENV = "1";
