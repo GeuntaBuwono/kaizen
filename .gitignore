@@ -10,3 +10,6 @@ node_modules/
 bot/.env
 bot/data/
 bot/dist/
+
+# Python bytecode.
+__pycache__/
