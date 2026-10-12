@@ -71,11 +71,11 @@ test("list: recursive, newest first, dot folders skipped", () => {
 test("list: only names the notebook can save back; a symlinked folder once, never a loop", () => {
   const n = join(state, "notes");
   saveNote(state, "ok", "x", 0);
-  writeFileSync(join(n, "What?.md"), "x");
-  writeFileSync(join(n, "a: b.md"), "x");
+  // Windows refuses these names outright, so there is nothing to list.
+  if (process.platform !== "win32") { writeFileSync(join(n, "What?.md"), "x"); writeFileSync(join(n, "a: b.md"), "x"); }
   mkdirSync(join(n, "1/2/3/4/5/6"), { recursive: true }); writeFileSync(join(n, "1/2/3/4/5/6/deep.md"), "x");
   mkdirSync(join(n, "trail ")); writeFileSync(join(n, "trail ", "x.md"), "x");
-  symlinkSync("..", join(n, "up"));
+  symlinkSync(process.platform === "win32" ? dirname(n) : "..", join(n, "up"), "junction");   // a junction needs no admin
   expect(listNotes(state).map((x) => x.name)).toEqual(["ok"]);
 });
 

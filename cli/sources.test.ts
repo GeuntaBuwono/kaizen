@@ -498,11 +498,12 @@ test("gather everything: each source's ideas land in its own project and no othe
 // The real server, in a scratch home on its own port. Nothing is fetched: only add, list and move.
 test("the board refuses to add a source without a project, and moves one between two", async () => {
   const homeDir = join(root, "home" + n), a = join(homeDir, "a", ".kaizen"), b = join(homeDir, "b", ".kaizen");
-  for (const d of [a, b, join(homeDir, ".kaizen")]) mkdirSync(d, { recursive: true });
+  // ~/.claude: kaizen will not start on a machine with no agent, and a CI box has none.
+  for (const d of [a, b, join(homeDir, ".kaizen"), join(homeDir, ".claude")]) mkdirSync(d, { recursive: true });
   writeFileSync(join(homeDir, ".kaizen", "projects"), [join(homeDir, "a"), join(homeDir, "b")].join("\n") + "\n");
   const port = 20000 + Math.floor(Math.random() * 20000);
   const repo = join(import.meta.dir, "..");
-  const proc = Bun.spawn([process.execPath, join(repo, "cli", "install.ts"), "web", "--port", String(port), "--no-open"], {
+  const proc = Bun.spawn([process.execPath, join(repo, "cli", "install.ts"), "web", "--port", String(port), "--no-open", "--foreground"], {
     cwd: join(homeDir, "a"), env: { ...process.env, HOME: homeDir, USERPROFILE: homeDir, KAIZEN_HOME: repo }, stdout: "ignore", stderr: "ignore",
   });
   try {
@@ -530,4 +531,4 @@ test("the board refuses to add a source without a project, and moves one between
     expect(await post({ op: "add", dir: b, url: SHEET })).toMatchObject({ status: 200 });
     expect(await post({ op: "move", dir: b, to: a, url: SHEET })).toMatchObject({ status: 409, error: "that project already has this link" });
   } finally { proc.kill(); await proc.exited; }
-});
+}, 30_000);   // a cold board start is slow on Windows

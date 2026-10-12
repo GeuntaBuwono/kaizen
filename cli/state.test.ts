@@ -399,6 +399,8 @@ test("commitPush: commits the run's files only, pushes, and records it; the mess
   expect(readCommit(st, "r1")).toEqual({ sha: r.sha, pushed: true });
   expect(cardsGit(st, ["r1", "r0", "nope"])).toEqual({ r1: "pushed", r0: "pushed" });   // r0: no record, but its file is in; c.txt still changed is not its business
 
+  // Windows has no file named b*.txt, so the rest is for everywhere else.
+  if (process.platform === "win32") return;
   // A push that fails leaves a record that says so.
   sh(proj, "remote", "set-url", "origin", join(root, "gone.git"));
   // A fix round's report names files too, and a name with a star in it is not a pattern.
@@ -415,7 +417,7 @@ test("commitPush: commits the run's files only, pushes, and records it; the mess
   expect(runGit(st, "r1")).toMatchObject({ files: [], ahead: 1, others: 2 });
   expect(cardsGit(st, ["r1"])).toEqual({ r1: "pending" });   // committed, not pushed
   expect(cardsGit(join(root, ".kaizen"), ["r1"])).toEqual({});   // not a repo
-});
+}, 60_000);   // dozens of git calls, ~250ms each on Windows
 
 test.skipIf(process.platform === "win32")("findTerminal: a running herdr wins, then tmux, else neither; the prompt stays one literal argument", () => {
   const bin = mkdtempSync(join(tmpdir(), "kz-bin-"));
@@ -456,8 +458,9 @@ test("nativePath on Windows reads the spellings Git Bash writes into the project
     for (const p of ["/c/Users/me/proj", "C:/Users/me/proj", "c:\\Users\\me\\proj\\", "C:\\Users\\me\\proj"])
       expect(nativePath(p)).toBe("C:\\Users\\me\\proj");
     expect(nativePath("/d")).toBe("D:\\");
+    Object.defineProperty(process, "platform", { value: "linux" });
+    expect(nativePath("/c/Users/me")).toBe("/c/Users/me");   // elsewhere a path is left alone
   } finally { Object.defineProperty(process, "platform", platform); }
-  expect(nativePath("/c/Users/me")).toBe("/c/Users/me");   // elsewhere a path is left alone
 });
 
 test("findTerminal on Windows names cmd and PowerShell by full path, so a PATH without System32 still launches", () => {
@@ -474,7 +477,9 @@ test("findTerminal on Windows names cmd and PowerShell by full path, so a PATH w
     expect(t.cmd[6]).toBe("D:\\Win\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
     process.env.ComSpec = "E:\\cmd.exe";
     expect(findTerminal("C:\\p", ["claude"])!.cmd[0]).toBe("E:\\cmd.exe");
-    // A running herdr: a tab, and the run typed into it as one encoded line.
+    // A running herdr: a tab, and the run typed into it as one encoded line. The fake
+    // is a shell script, which real Windows cannot run with ComSpec pointed elsewhere.
+    if (platform.value === "win32") return;
     writeFileSync(join(process.env.PATH, "herdr"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     const h = findTerminal("C:\\p", ["claude", "/kaizen it's\nnote"])!;
     expect([h.cmd[0], h.cmd[1], h.cmd[2], h.detached]).toEqual(["D:\\Win\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-NoProfile", "-EncodedCommand", false]);
@@ -815,13 +820,14 @@ test("trustFolder: marks the repo root trusted in a temp config, keeps the rest,
   mkdirSync(sub, { recursive: true }); mkdirSync(plain);
   Bun.spawnSync(["git", "init", "-q", repo]);
   const cfg = join(t, ".claude.json");
-  writeFileSync(cfg, JSON.stringify({ keep: 1, projects: { [plain]: { x: 2 } } }));
+  const key = (p: string) => process.platform === "win32" ? p.replace(/\\/g, "/") : p;   // Claude Code's spelling
+  writeFileSync(cfg, JSON.stringify({ keep: 1, projects: { [key(plain)]: { x: 2 } } }));
   trustFolder(sub, cfg);
   trustFolder(plain, cfg);
   const d = JSON.parse(readFileSync(cfg, "utf8"));
   expect(d.keep).toBe(1);
-  expect(d.projects[realpathSync(repo)]).toEqual({ hasTrustDialogAccepted: true });
-  expect(d.projects[plain]).toEqual({ x: 2, hasTrustDialogAccepted: true });
+  expect(d.projects[key(realpathSync(repo))]).toEqual({ hasTrustDialogAccepted: true });
+  expect(d.projects[key(plain)]).toEqual({ x: 2, hasTrustDialogAccepted: true });
   writeFileSync(cfg, "{bad");
   trustFolder(plain, cfg);
   expect(readFileSync(cfg, "utf8")).toBe("{bad");

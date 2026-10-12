@@ -1,0 +1,3 @@
+# Checked out with LF everywhere: tests and the board slice files on "\n\n",
+# and Git for Windows would otherwise turn every text file CRLF.
+* text=auto eol=lf

@@ -2,7 +2,7 @@
 // `.kaizen/` directory. No terminal, no HTTP: the TUI (`dashboard.ts`) and the web
 // board (`web.ts`) both import this and draw it their own way.
 import { existsSync, readFileSync, readdirSync, appendFileSync, writeFileSync, mkdirSync, statSync, realpathSync, rmSync, renameSync, copyFileSync } from "node:fs";
-import { join, dirname, win32 } from "node:path";
+import { join, dirname, win32, posix } from "node:path";
 import { homedir, arch, cpus, release, totalmem, version as osVersion } from "node:os";
 
 // The real path: process.cwd() is always physical, so a raw $HOME that crosses a
@@ -730,11 +730,12 @@ export function appendNote(state: string, target: { id: string } | { text: strin
 // ponytail: no dedupe, no size accounting beyond the request cap in web.ts.
 export function saveAttachment(state: string, id: string | null, name: string, bytes: Uint8Array) {
   const safe = name.replace(/[^\w.-]+/g, "_").replace(/^\.+/, "") || "file";
-  const rel = id ? join("runs", id, "attachments") : "attachments";
+  // posix: the note links it as attachments/..., and a backslash on Windows breaks that.
+  const rel = id ? posix.join("runs", id, "attachments") : "attachments";
   mkdirSync(join(state, rel), { recursive: true });
   const file = `${Date.now().toString(36)}-${safe}`;
   writeFileSync(join(state, rel, file), bytes);
-  return join(rel, file);
+  return posix.join(rel, file);
 }
 
 // What a card is worth interrupting someone for, in the words both UIs send: a run
@@ -1133,7 +1134,9 @@ export function sessionLaunch(projectDir: string, cmd: string, base: string[], p
 export function trustFolder(dir: string, cfg = join(process.env.CLAUDE_CONFIG_DIR ?? homedir(), ".claude.json")) {
   try {
     const top = Bun.spawnSync(["git", "-C", dir, "rev-parse", "--show-toplevel"], { stderr: "ignore" });
-    const root = top.success ? top.stdout.toString().trim() || dir : dir;
+    // Claude Code keys its projects with forward slashes on Windows, as git prints them.
+    const found = top.success ? top.stdout.toString().trim() || dir : dir;
+    const root = process.platform === "win32" ? found.replace(/\\/g, "/") : found;
     const d = JSON.parse(readFileSync(cfg, "utf8"));
     if (d.projects?.[root]?.hasTrustDialogAccepted) return;
     d.projects ??= {};
