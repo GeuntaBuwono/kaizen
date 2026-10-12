@@ -90,7 +90,7 @@ const fromPackage = (make: (k: string) => void, custom = false) => {
   const root = mkdtempSync(join(tmpdir(), "kz-replace-"));
   const home = join(root, "home"), pkg = join(root, "pkg");
   const k = custom ? join(root, "kaizen") : join(home, "kaizen");
-  mkdirSync(home);
+  mkdirSync(join(home, ".claude"), { recursive: true });   // an agent: the installer stops on a box with none
   const src = dirname(dirname(import.meta.path));
   for (const d of ["cli", "skills", "agents", "commands", "web", "package.json"]) {
     cpSync(join(src, d), join(pkg, d), { recursive: true, filter: (p) => !p.includes("node_modules") });
@@ -129,7 +129,7 @@ it.skipIf(!Bun.which("git"))("an npm package never replaces a development checko
 it("upgrade with npm unreachable says not upgraded, never up to date", () => {
   const root = mkdtempSync(join(tmpdir(), "kz-offline-"));
   const home = join(root, "home");
-  mkdirSync(home);
+  mkdirSync(join(home, ".claude"), { recursive: true });   // an agent: the installer stops on a box with none
   kaizenFiles(join(home, "kaizen"));
   const env = { PATH: process.env.PATH ?? "", HOME: home, TMPDIR: root, HTTPS_PROXY: "http://127.0.0.1:9", https_proxy: "http://127.0.0.1:9" };
   const p = Bun.spawnSync([process.execPath, script, "upgrade"], { cwd: home, env });

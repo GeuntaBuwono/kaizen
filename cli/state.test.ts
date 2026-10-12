@@ -429,7 +429,7 @@ test.skipIf(process.platform === "win32")("findTerminal: a running herdr wins, t
     for (const k of keys.slice(1)) delete process.env[k];
     const prompt = `/kaizen it's "q" $HOME \`id\`\n\nnote`;
     const full = ["/usr/bin/claude", "--model", "opus", prompt];
-    expect(findTerminal("/p", full)?.cmd[0]).not.toMatch(/^(sh|tmux)$/);   // neither installed
+    expect(findTerminal("/p", full)?.cmd[0] ?? "").not.toMatch(/^(sh|tmux)$/);   // neither installed (null with no display)
     stub("herdr", 1); stub("tmux", 1);
     expect(findTerminal("/p", full)?.cmd[0]).not.toMatch(/^(sh|tmux)$/);   // installed, no server
     process.env.TMUX = "/tmp/x,1,0"; process.env.HERDR_ENV = "1";
@@ -826,7 +826,7 @@ test("trustFolder: marks the repo root trusted in a temp config, keeps the rest,
   trustFolder(plain, cfg);
   const d = JSON.parse(readFileSync(cfg, "utf8"));
   expect(d.keep).toBe(1);
-  expect(d.projects[key(realpathSync(repo))]).toEqual({ hasTrustDialogAccepted: true });
+  expect(d.projects[key(realpathSync.native(repo))]).toEqual({ hasTrustDialogAccepted: true });
   expect(d.projects[key(plain)]).toEqual({ x: 2, hasTrustDialogAccepted: true });
   writeFileSync(cfg, "{bad");
   trustFolder(plain, cfg);

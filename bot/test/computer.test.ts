@@ -207,7 +207,7 @@ test("approve runs the task; files download after the sandbox is gone; only list
   expect((await req(app, `/actions/${b.id}`, { method: "POST", body: { op: "approve" } })).status).toBe(409);
   await waitDone(app);
   const done = store.action(a.id)!;
-  expect(done.status).toBe("done");
+  expect([done.status, done.result]).toEqual(["done", "ok"]);   // the result says why it failed
   const snap = JSON.parse(done.snapshot!);
   expect(snap.state).toBe("stopped");
   expect(snap.clean).toBe(true);
