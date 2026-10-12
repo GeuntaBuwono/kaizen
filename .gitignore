@@ -17,3 +17,8 @@ bot/dist/
 
 # Python bytecode.
 __pycache__/
+
+# kaizen run state
+.kaizen/*
+!.kaizen/spec*.md
+!.kaizen/config.yml
