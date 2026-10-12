@@ -49,6 +49,20 @@ Then, in any project:
 
 That's it. No init and no config.
 
+kaizen needs an AI coding agent to run it, such as [Claude Code](https://docs.claude.com/en/docs/claude-code); install one first. Git is needed for the board's commit and push.
+
+## Use it
+
+There are three ways in, all on the same runs:
+
+| | How | What you do there |
+|---|---|---|
+| **Your agent** | `/kaizen <request>` in Claude Code, Codex, Cursor, … | Start a run and answer it in the chat. All commands are under [Commands](#commands). |
+| **The board** | `kaizen web` opens it in the browser; `kaizen` in a terminal. `kaizen web --shortcut` once adds a launcher: Spotlight on macOS, the app menu on Linux, a Desktop shortcut on Windows | Every project's ideas and runs. Start a run, approve or revise a plan, answer its questions, pick findings to fix, then commit and push. |
+| **Kaizen Bot** | The [desktop app](#download-the-app), or `bun start` in `bot/` | Chat with the board: ask what's waiting on you, hand teammates their asks. The app starts the board itself; from `bot/`, run `kaizen web` first. See [Kaizen Bot](#kaizen-bot). |
+
+Settings for a project or for all of them: `kaizen settings`. New version: `kaizen upgrade`.
+
 ## See it
 
 ```
