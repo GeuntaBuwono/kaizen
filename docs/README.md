@@ -22,5 +22,7 @@ when you need the next thing.
 
 Working documents, not user documentation — read them if you are working on kaizen itself.
 
+- [Contributing](../CONTRIBUTING.md) — set up, dogfooding non-trivial work, pull requests, bug reports.
+
 - [`design.md`](../design.md) — design notes for the repo.
 - [`bot/pilot/`](../bot/pilot/README.md) — the computer-use pilot: how it was scoped, and what it found.
