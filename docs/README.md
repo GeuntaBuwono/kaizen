@@ -5,7 +5,7 @@ when you need the next thing.
 
 ## Using kaizen
 
-- [README](../README.md) — what kaizen is, installing it, your first run. Start here.
+- [README](../README.md) — what kaizen is, installing it, your first run, developing it. Start here.
 - [guide](guide.md) — the depth: the board (terminal and browser), the notebook, request sources, settings, installer flags, updating and uninstalling.
 - [Kaizen Bot](../bot/README.md) — the chat front end for your board: its agents, the desktop app, providers, privacy.
 - Bundled skills — `story-deck` and `story-video` live under [`skills/`](../skills/), each with its own card in its folder.

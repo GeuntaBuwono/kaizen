@@ -44,7 +44,7 @@ To add a launcher (Spotlight on macOS, the app menu on Linux, a Desktop shortcut
 
 ## Development
 
-TypeScript on [Bun](https://bun.sh), zero runtime dependencies. No build step for the CLI — `cli/*.ts` runs as-is — and the web front end ships prebuilt.
+TypeScript on [Bun](https://bun.sh) 1.1 or newer, zero runtime dependencies. No build step for the CLI — `cli/*.ts` runs as-is — and the web front end ships prebuilt.
 
 ```bash
 git clone https://github.com/hfadhlullah/kaizen.git && cd kaizen
@@ -78,7 +78,7 @@ bun run build:web         # rewrites web/notebook.js; a test fails if it goes st
 | `bot/` | Kaizen Bot — a separate private package with its own tests and build. See [its README](bot/README.md). |
 | `docs/` | The guide and internal notes, indexed in [`docs/README.md`](docs/README.md). |
 | `design.md` | Design notes for the repo. |
-| `.kaizen/` | This repo's own runs — kaizen is built with kaizen. |
+| `.kaizen/` | This repo's own runs — kaizen is built with kaizen. Gitignored: a fresh clone gets it on its first run. |
 
 ### Kaizen Bot
 
