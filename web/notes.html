@@ -14,7 +14,7 @@
 :root{--r:10px;--r-s:6px;--r-pill:999px;--font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;--mono:ui-monospace,"JetBrains Mono","Cascadia Code","SF Mono",Menlo,Consolas,monospace;--on-accent:#fff;--hover:color-mix(in srgb,var(--dim) 12%,transparent);--shade:rgb(12 22 47/.1);--shadow-1:0 1px 2px var(--shade);--shadow-2:0 2px 6px var(--shade),0 16px 40px -12px var(--shade)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--shade:rgb(0 0 0/.45)}}
 :root[data-theme=dark]{--shade:rgb(0 0 0/.45)}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased;height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased;height:100vh;height:100dvh;overflow:hidden;display:flex}
 button,input,select{font:inherit;color:inherit;background:none;border:0;padding:0}
 button{cursor:pointer}
 a{color:inherit;text-decoration:none}
@@ -22,11 +22,37 @@ a{color:inherit;text-decoration:none}
 svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
 [hidden]{display:none!important}
 
-/* header: the board's, with the wordmark as the way back */
+/* side menu: the same lines in board.html and notes.html (a test holds them equal) */
+.rail{width:220px;flex:none;background:var(--bg-2);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px;padding:18px 12px 14px;overflow:hidden auto;transition:width .18s}
+.rail .top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 0 18px 10px}
+.rail .home{display:block;color:inherit;text-decoration:none}
+.rail .top .mascot{display:none;width:36px;height:34px}
+.rail a.it{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:var(--r-s);font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;white-space:nowrap;transition:background .12s,color .12s}
+.rail a.it:hover{background:var(--hover);color:var(--ink)}
+.rail a.it[aria-current=page]{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink)}
+.rail a.it[aria-current=page] svg{color:var(--accent)}
+.rail .end{flex:1}
+.theme{display:flex;gap:2px;padding:3px;border-radius:var(--r-s);background:var(--hover)}
+.theme button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:28px;border-radius:4px;font-size:12px;font-weight:500;color:var(--dim);transition:background .12s,color .12s}
+.theme button svg{width:15px;height:15px}
+.theme button:hover{color:var(--ink)}
+.theme button[aria-pressed=true]{background:var(--bg-2);color:var(--ink);box-shadow:var(--shadow-1)}
+[data-rail=min] .rail{width:60px;padding-inline:10px;align-items:center}
+[data-rail=min] .rail .top{flex-direction:column;gap:12px;padding:0 0 14px}
+[data-rail=min] .rail .top pre.mark{display:none}
+[data-rail=min] .rail .top .mascot{display:block}
+[data-rail=min] .rail a.it{width:40px;justify-content:center;padding:0}
+[data-rail=min] .rail .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+[data-rail=min] .theme{flex-direction:column}
+[data-rail=min] .theme button{width:34px;flex:none}
+@media(max-width:640px){#fold{display:none}}
+/* end side menu */
+.app{flex:1;min-width:0;display:flex;flex-direction:column}
+/* header: the board's */
 .hdr{display:flex;align-items:center;gap:16px;padding:14px 28px;border-bottom:1px solid var(--line);background:var(--bg-2);flex-wrap:wrap}
 pre.mark{margin:0;font:700 8px/1 var(--mono)}
 pre.mark span:nth-child(1){color:var(--ink-hi)}pre.mark span:nth-child(2){color:color-mix(in srgb,var(--ink-hi),var(--accent))}pre.mark span:nth-child(3){color:var(--accent)}
-.hdr h1{margin:0;font-size:13px;font-weight:600;color:var(--dim)}
+.hdr h1{margin:0;font-size:17px;font-weight:600}
 .sel{border:1px solid var(--line);border-radius:var(--r-s);padding:6px 12px;background-color:var(--bg-2);color:var(--ink);font-size:13px}
 select.sel{cursor:pointer;appearance:none;padding-right:30px;max-width:min(320px,100%);text-overflow:ellipsis;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat}
 .sel:hover{border-color:var(--dim)}
@@ -78,7 +104,7 @@ select.sel{cursor:pointer;appearance:none;padding-right:30px;max-width:min(320px
 .main.dealt{position:relative;z-index:6;box-shadow:var(--shadow-2);will-change:transform}
 .wrap{overflow:hidden}
 /* Full screen: the open note alone, header and sidebar gone. */
-.full .hdr,.full .side,.full #side{display:none!important}
+.full .rail,.full .hdr,.full .side,.full #side{display:none!important}
 .full .wrap{grid-template-columns:1fr}
 #title{width:100%;margin:0 0 4px -6px;padding:2px 6px;border:1px solid transparent;border-radius:var(--r-s);font-size:26px;font-weight:600;line-height:1.3;color:var(--ink)}
 #title:hover{border-color:var(--line)}
@@ -166,6 +192,13 @@ select.sel{cursor:pointer;appearance:none;padding-right:30px;max-width:min(320px
 <symbol id="s-wait" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5M8 11v.1"/></symbol>
 <symbol id="s-done" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="currentColor" stroke="none"/><path d="M5.5 8l1.8 1.8L10.8 6" stroke="var(--bg-2)"/></symbol>
 <symbol id="s-aband" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1.4l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7M14 11a5 5 0 0 0-7.1-.4l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"/></symbol>
+<symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></symbol>
+<symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
 <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
 <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
@@ -176,15 +209,39 @@ select.sel{cursor:pointer;appearance:none;padding-right:30px;max-width:min(320px
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
 </defs></svg>
 
+<nav class="rail" aria-label="Main">
+  <div class="top"><a class="home" href="/" title="Board" aria-label="kaizen board"><pre class="mark"><span>█ █  ▄▀█  █  ▀▀█  █▀▀  █▄ █</span>
+<span>█▀▄  █▀█  █   ▄▀  ██▄  █ ▀█</span>
+<span>█ █  █ █  █  █▄▄  █▄▄  █  █</span></pre><span class="mascot"></span></a><button class="ib" id="fold" aria-label="Collapse menu" title="Collapse menu"><svg><use href="#i-side"/></svg></button></div>
+  <a class="it" href="/" data-view="board" title="Board"><svg><use href="#i-board"/></svg><span class="lbl">Board</span></a>
+  <a class="it" href="/notebook" data-view="notes" title="Notes"><svg><use href="#i-note"/></svg><span class="lbl">Notes</span></a>
+  <a class="it" href="/?view=sources" data-view="sources" title="Request sources"><svg><use href="#i-link"/></svg><span class="lbl">Sources</span></a>
+  <a class="it" href="/?view=settings" data-view="settings" title="Settings"><svg><use href="#i-gear"/></svg><span class="lbl">Settings</span></a>
+  <span class="end"></span>
+  <div class="theme" role="group" aria-label="Theme"><button data-t="light" title="Light theme"><svg><use href="#i-sun"/></svg><span class="lbl">Light</span></button><button data-t="dark" title="Dark theme"><svg><use href="#i-moon"/></svg><span class="lbl">Dark</span></button></div>
+</nav>
+<script>
+// Side menu: theme and collapse, the same lines in board.html and notes.html. Runs before
+// the page draws, so a stored theme or a collapsed menu never flashes the default first.
+(()=>{const r=document.documentElement,wide=matchMedia("(max-width:1100px)"),phone=matchMedia("(max-width:640px)"),os=matchMedia("(prefers-color-scheme: dark)");
+ // The toggle's choice is kept per browser; with none, the width decides. A phone always gets icons.
+ let fold=null;try{fold=localStorage.getItem("kz-rail")}catch(e){}
+ const rail=()=>{const m=phone.matches||(fold?fold==="min":wide.matches),b=document.getElementById("fold");r.dataset.rail=m?"min":"full";b.title=m?"Expand menu":"Collapse menu";b.setAttribute("aria-label",b.title);b.setAttribute("aria-expanded",!m)};
+ wide.addEventListener("change",rail);phone.addEventListener("change",rail);rail();
+ document.getElementById("fold").onclick=()=>{fold=r.dataset.rail==="min"?"full":"min";try{localStorage.setItem("kz-rail",fold)}catch(e){}rail()};
+ // Theme: light, dark, or unset for system, in kz-theme. The switch shows what is on screen.
+ const paint=()=>{const d=r.dataset.theme?r.dataset.theme==="dark":os.matches;document.querySelectorAll(".theme button").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.t==="dark")===d))};
+ window.setTheme=t=>{if(t==="system")delete r.dataset.theme;else r.dataset.theme=t;try{t==="system"?localStorage.removeItem("kz-theme"):localStorage.setItem("kz-theme",t)}catch(e){}paint();dispatchEvent(new Event("kz-theme"))};
+ try{const t=localStorage.getItem("kz-theme");if(t)r.dataset.theme=t}catch(e){}
+ os.addEventListener("change",paint);paint();
+ document.querySelectorAll(".theme button").forEach(b=>b.onclick=()=>setTheme(b.dataset.t))})();
+</script>
+<div class="app">
 <div class="hdr">
   <button class="ib" id="side" title="Notes list" aria-label="Notes list"><svg><use href="#i-list"/></svg></button>
-  <a href="/" title="Back to the board" aria-label="kaizen board"><pre class="mark"><span>█ █  ▄▀█  █  ▀▀█  █▀▀  █▄ █</span>
-<span>█▀▄  █▀█  █   ▄▀  ██▄  █ ▀█</span>
-<span>█ █  █ █  █  █▄▄  █▄▄  █  █</span></pre></a>
   <h1>Notebook</h1>
   <select class="sel" id="proj" aria-label="Project"></select>
   <span class="sp"></span>
-  <a class="btn ghost" href="/">Board</a>
   <button class="btn pri" id="new">New note</button>
 </div>
 
@@ -209,7 +266,9 @@ select.sel{cursor:pointer;appearance:none;padding-right:30px;max-width:min(320px
     </div>
   </main>
 </div>
+</div>
 <div class="toast" id="toast" role="status"></div>
+<script>document.querySelector('.rail a[data-view="notes"]').setAttribute("aria-current","page")</script>
 <script src="/notebook.js"></script>
 </body>
 </html>

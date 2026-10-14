@@ -13,12 +13,38 @@
 :root{--r:10px;--r-s:6px;--r-pill:999px;--font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;--mono:ui-monospace,"JetBrains Mono","Cascadia Code","SF Mono",Menlo,Consolas,monospace;--on-accent:#fff;--hover:color-mix(in srgb,var(--dim) 12%,transparent);--shade:rgb(12 22 47/.1);--shadow-1:0 1px 2px var(--shade);--shadow-2:0 2px 6px var(--shade),0 16px 40px -12px var(--shade)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--shade:rgb(0 0 0/.45)}}
 :root[data-theme=dark]{--shade:rgb(0 0 0/.45)}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased;height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased;height:100vh;height:100dvh;overflow:hidden;display:flex}
 button,input,select{font:inherit;color:inherit;background:none;border:0;padding:0}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
 
+/* side menu: the same lines in board.html and notes.html (a test holds them equal) */
+.rail{width:220px;flex:none;background:var(--bg-2);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px;padding:18px 12px 14px;overflow:hidden auto;transition:width .18s}
+.rail .top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 0 18px 10px}
+.rail .home{display:block;color:inherit;text-decoration:none}
+.rail .top .mascot{display:none;width:36px;height:34px}
+.rail a.it{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:var(--r-s);font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;white-space:nowrap;transition:background .12s,color .12s}
+.rail a.it:hover{background:var(--hover);color:var(--ink)}
+.rail a.it[aria-current=page]{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink)}
+.rail a.it[aria-current=page] svg{color:var(--accent)}
+.rail .end{flex:1}
+.theme{display:flex;gap:2px;padding:3px;border-radius:var(--r-s);background:var(--hover)}
+.theme button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:28px;border-radius:4px;font-size:12px;font-weight:500;color:var(--dim);transition:background .12s,color .12s}
+.theme button svg{width:15px;height:15px}
+.theme button:hover{color:var(--ink)}
+.theme button[aria-pressed=true]{background:var(--bg-2);color:var(--ink);box-shadow:var(--shadow-1)}
+[data-rail=min] .rail{width:60px;padding-inline:10px;align-items:center}
+[data-rail=min] .rail .top{flex-direction:column;gap:12px;padding:0 0 14px}
+[data-rail=min] .rail .top pre.mark{display:none}
+[data-rail=min] .rail .top .mascot{display:block}
+[data-rail=min] .rail a.it{width:40px;justify-content:center;padding:0}
+[data-rail=min] .rail .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+[data-rail=min] .theme{flex-direction:column}
+[data-rail=min] .theme button{width:34px;flex:none}
+@media(max-width:640px){#fold{display:none}}
+/* end side menu */
+.app{flex:1;min-width:0;display:flex;flex-direction:column}
 /* header */
 .hdr{display:flex;align-items:center;gap:16px;padding:14px 28px;border-bottom:1px solid var(--line);background:var(--bg-2);flex-wrap:wrap}
 pre.mark{margin:0;font:700 8px/1 var(--mono)}
@@ -31,6 +57,7 @@ select.sel,button.sel{cursor:pointer;appearance:none;padding-right:30px;max-widt
 .agent svg{width:14px;height:14px}.agent:hover{border-color:var(--dim)}
 .yolo{display:inline-flex;align-items:center;gap:8px;margin-right:auto;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap}
 .agent[aria-checked=true]{border-color:var(--accent);color:var(--ink);background:color-mix(in srgb,var(--accent) 14%,var(--bg-2))}
+.hdr h1{margin:0;font-size:17px;font-weight:600}
 .hdr .sel{max-width:min(320px,100%);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
 /* project picker: a select-shaped button over a searchable list */
 .combo{position:relative;max-width:100%;display:flex}
@@ -165,6 +192,13 @@ section h2 .clear{margin-left:auto;min-height:22px;padding:0 8px}
 .scrim.on{display:block}
 aside{position:fixed;top:0;right:0;bottom:0;z-index:11;width:520px;max-width:100%;background:var(--bg-2);border-left:1px solid var(--line);box-shadow:var(--shadow-2);display:flex;flex-direction:column;transform:translateX(100%);visibility:hidden;transition:transform .18s,visibility .18s}
 aside.open{transform:none;visibility:visible}
+/* Settings and Sources are pages: the same panel, docked into the app column, its content in a centred column */
+body.paged #board,body.paged .ftr,body.paged .hdr,body.paged .scrim{display:none}
+aside.docked{position:static;flex:1;min-height:0;width:auto;transform:none;visibility:visible;transition:none;box-shadow:none;border:0}
+aside.docked header,aside.docked .body{padding-inline:max(28px,calc((100% - 760px)/2))}
+aside.docked header{border-bottom:0;padding-top:28px;padding-bottom:12px}
+aside.docked header b{font-size:20px}
+aside.docked #pclose{display:none}
 aside header{display:flex;align-items:flex-start;gap:12px;padding:20px 24px 16px;border-bottom:1px solid var(--line)}
 aside header .t{flex:1;min-width:0}
 aside header b{display:block;font-size:17px;font-weight:600;line-height:1.35}
@@ -285,7 +319,7 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 .src-add-box{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-top:16px;box-shadow:var(--shadow-1)}
 .src-add-box h3{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px}
 .src-add-box h3 svg{width:16px;height:16px}
-@media(max-width:900px){main{grid-template-columns:1fr;padding-inline:16px;gap:8px}.hdr,.ftr{padding-inline:16px}.more{display:grid}.card:hover .age{display:inline}.toast{left:16px;max-width:calc(100% - 32px)}}
+@media(max-width:900px){main{grid-template-columns:1fr;padding-inline:16px;gap:8px}.hdr,.ftr,aside.docked header,aside.docked .body{padding-inline:16px}.more{display:grid}.card:hover .age{display:inline}.toast{left:16px;max-width:calc(100% - 32px)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -310,6 +344,10 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 3v5h-5M3 21v-5h5M20.5 13A9 9 0 0 1 5.7 18.3L3 16M3.5 11A9 9 0 0 1 18.3 5.7L21 8"/></symbol>
 <symbol id="i-ext" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></symbol>
+<symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></symbol>
+<symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
 <symbol id="s-idea" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke-dasharray="2 2.5"/></symbol>
 <symbol id="s-start" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke-dasharray="2 2.5"/><path d="M6.5 5.5v5l4-2.5z" fill="currentColor" stroke="none"/></symbol>
 <symbol id="s-run" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor" stroke="none"/></symbol>
@@ -329,17 +367,40 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 <symbol id="c-git" viewBox="0 0 16 16"><circle cx="4.5" cy="3.5" r="1.5"/><circle cx="4.5" cy="12.5" r="1.5"/><circle cx="11.5" cy="5.5" r="1.5"/><path d="M4.5 5v6M11.5 7c0 2.5-7 1.5-7 4"/></symbol>
 </defs></svg>
 
-<div class="hdr">
-  <pre class="mark" aria-label="kaizen"><span>█ █  ▄▀█  █  ▀▀█  █▀▀  █▄ █</span>
+<nav class="rail" aria-label="Main">
+  <div class="top"><a class="home" href="/" title="Board" aria-label="kaizen board"><pre class="mark"><span>█ █  ▄▀█  █  ▀▀█  █▀▀  █▄ █</span>
 <span>█▀▄  █▀█  █   ▄▀  ██▄  █ ▀█</span>
-<span>█ █  █ █  █  █▄▄  █▄▄  █  █</span></pre>
+<span>█ █  █ █  █  █▄▄  █▄▄  █  █</span></pre><span class="mascot"></span></a><button class="ib" id="fold" aria-label="Collapse menu" title="Collapse menu"><svg><use href="#i-side"/></svg></button></div>
+  <a class="it" href="/" data-view="board" title="Board"><svg><use href="#i-board"/></svg><span class="lbl">Board</span></a>
+  <a class="it" href="/notebook" data-view="notes" title="Notes"><svg><use href="#i-note"/></svg><span class="lbl">Notes</span></a>
+  <a class="it" href="/?view=sources" data-view="sources" title="Request sources"><svg><use href="#i-link"/></svg><span class="lbl">Sources</span></a>
+  <a class="it" href="/?view=settings" data-view="settings" title="Settings"><svg><use href="#i-gear"/></svg><span class="lbl">Settings</span></a>
+  <span class="end"></span>
+  <div class="theme" role="group" aria-label="Theme"><button data-t="light" title="Light theme"><svg><use href="#i-sun"/></svg><span class="lbl">Light</span></button><button data-t="dark" title="Dark theme"><svg><use href="#i-moon"/></svg><span class="lbl">Dark</span></button></div>
+</nav>
+<script>
+// Side menu: theme and collapse, the same lines in board.html and notes.html. Runs before
+// the page draws, so a stored theme or a collapsed menu never flashes the default first.
+(()=>{const r=document.documentElement,wide=matchMedia("(max-width:1100px)"),phone=matchMedia("(max-width:640px)"),os=matchMedia("(prefers-color-scheme: dark)");
+ // The toggle's choice is kept per browser; with none, the width decides. A phone always gets icons.
+ let fold=null;try{fold=localStorage.getItem("kz-rail")}catch(e){}
+ const rail=()=>{const m=phone.matches||(fold?fold==="min":wide.matches),b=document.getElementById("fold");r.dataset.rail=m?"min":"full";b.title=m?"Expand menu":"Collapse menu";b.setAttribute("aria-label",b.title);b.setAttribute("aria-expanded",!m)};
+ wide.addEventListener("change",rail);phone.addEventListener("change",rail);rail();
+ document.getElementById("fold").onclick=()=>{fold=r.dataset.rail==="min"?"full":"min";try{localStorage.setItem("kz-rail",fold)}catch(e){}rail()};
+ // Theme: light, dark, or unset for system, in kz-theme. The switch shows what is on screen.
+ const paint=()=>{const d=r.dataset.theme?r.dataset.theme==="dark":os.matches;document.querySelectorAll(".theme button").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.t==="dark")===d))};
+ window.setTheme=t=>{if(t==="system")delete r.dataset.theme;else r.dataset.theme=t;try{t==="system"?localStorage.removeItem("kz-theme"):localStorage.setItem("kz-theme",t)}catch(e){}paint();dispatchEvent(new Event("kz-theme"))};
+ try{const t=localStorage.getItem("kz-theme");if(t)r.dataset.theme=t}catch(e){}
+ os.addEventListener("change",paint);paint();
+ document.querySelectorAll(".theme button").forEach(b=>b.onclick=()=>setTheme(b.dataset.t))})();
+</script>
+<div class="app">
+<div class="hdr">
+  <h1>Board</h1>
   <div class="combo" id="combo"><button class="sel" id="proj" aria-label="project" aria-haspopup="listbox" aria-expanded="false"></button><div class="menu-pop" id="projpop" hidden><input class="sel" id="projq" aria-label="Search projects" placeholder="Search projects…" spellcheck="false" autocomplete="off"><div id="projs" role="listbox"></div></div></div>
   <div class="combo" id="showc" hidden><button class="sel" id="show" aria-label="Projects shown" aria-haspopup="true" aria-expanded="false"></button><div class="menu-pop" id="showpop" hidden><input class="sel" id="showq" aria-label="Search projects" placeholder="Search projects…" spellcheck="false" autocomplete="off"><div id="shows"></div><button id="showall">Show all</button></div></div>
   <span class="sp"></span>
   <button class="btn pri" id="newtop">New idea</button>
-  <a class="ib" href="/notebook" title="Notebook" aria-label="Notebook"><svg><use href="#i-note"/></svg></a>
-  <button class="ib" id="sources" title="Request sources" aria-label="Request sources"><svg><use href="#i-link"/></svg></button>
-  <button class="ib" id="settings" title="Settings" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
 </div>
 <main id="board" aria-live="polite"></main>
 
@@ -352,6 +413,7 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
   <div class="body md" id="pbody"></div>
   <div class="foot" id="pfoot"></div>
 </aside>
+</div>
 <div class="toast" id="toast" role="status"></div>
 <div class="help" id="help"><div>
 <p>Optional. Everything here is also a button.</p>
@@ -660,6 +722,7 @@ const TABS=[["Request","request"],["Notes","notes"],["Plan","plan"],["Backlog","
 const tabOf=k=>TABS.findIndex(t=>t[1]===k);
 // keepTab: a link already chose the tab.
 function open(c,keepTab){
+ if(view!=="board")go("board",true);
  stopDictation(true); // the panel body is about to be replaced
  fixOff.clear();openKey=key(c);$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=c.kind==="idea"?brief(c.text).head:c.text;render();
  if(c.kind==="idea"){runDoc=null;$("psub").textContent="Idea · "+c.where;$("ptabs").innerHTML="";chat(c,c.notes,c.archived||c.status!=="idea");
@@ -847,7 +910,7 @@ async function commitPush(c,message,b){b.disabled=true;b.dataset.busy=1;b.textCo
  // A refused message comes back for another try, beside the current file list.
  if(!r.ok&&message&&openKey===key(c)&&runDoc.git.files&&runDoc.git.files.length)confirmCommit(c,message)}
 async function toggleArchive(c,archived){const r=await post("/archive",c.kind==="idea"?{dir:c.state,text:c.text,archived}:{dir:c.state,id:c.id,archived});if(r.ok)toast(archived?"Archived":"Restored");close();load()}
-function close(){const k=openKey;stopDictation(true);openKey=null;runDoc=null;$("panel").classList.remove("open");$("scrim").classList.remove("on");render();if(k)cardEl(k)?.focus({preventScroll:true})}
+function close(){if(view!=="board")return;const k=openKey;stopDictation(true);openKey=null;runDoc=null;$("panel").classList.remove("open");$("scrim").classList.remove("on");render();if(k)cardEl(k)?.focus({preventScroll:true})}
 $("pclose").onclick=close;$("scrim").onclick=close;
 // An idea is one inbox line, so a structured request arrives as one wall:
 // "Fix x Problem: … Scope: … Acceptance criteria: (1) … (2) …". Split it, for display
@@ -932,13 +995,27 @@ async function openSettings(){
  // Esc clears a search; with nothing to clear it closes the panel, as it does outside the field.
  $("sq").onkeydown=e=>{if(e.key!=="Escape")return;e.preventDefault();if(setQ){setQ="";e.target.value="";filter()}else close()};
  filter();if(hadFocus){const f=$("sq");f.focus();f.setSelectionRange(f.value.length,f.value.length)}
- const setTheme=t=>{if(t==="system")delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;try{t==="system"?localStorage.removeItem("kz-theme"):localStorage.setItem("kz-theme",t)}catch(e){}};
  $("th").onchange=e=>setTheme(e.target.value);
  $("nt").onclick=()=>{askNotify();setTimeout(openSettings,300)};
  if(cfg)cfg.rows.forEach(r=>{const el=$("s-"+r.key.replace(/\./g,"-"));const save=async v=>{const f=document.activeElement?.id;const j=await post("/settings",{key:r.key,value:v});if(j.ok)toast("Saved");await openSettings();if(f?.startsWith("s-preset-"))$(f)?.focus()};
   if(el.tagName==="SELECT"||el.tagName==="INPUT")el.onchange=async()=>{await save(el.value.trim());if(el.tagName==="INPUT")load()};else el.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>save(b.dataset.v));if(el.matches(".chk"))el.onclick=()=>save(el.dataset.v);
   // The system's own folder dialog, opened by the board: a page cannot read a real path.
   if(r.folder)$(el.id+"-pick").onclick=async()=>{const j=await post("/pick-folder",{});if(j.path){await save(j.path);load()}}})}
+// ---- views: the board, or Settings and Sources as pages in the docked panel, each with its own address
+let view="board";
+const markView=v=>document.querySelectorAll(".rail a.it").forEach(a=>a.dataset.view===v?a.setAttribute("aria-current","page"):a.removeAttribute("aria-current"));
+function go(v,push){if(!["settings","sources"].includes(v))v="board";const was=view;view=v;markView(v);document.body.classList.toggle("paged",v!=="board");
+ if(push&&v!==was)history.pushState(null,"",v==="board"?location.pathname:"?view="+v);
+ const p=$("panel");
+ if(v==="board"){if(was==="board")return;
+  // Undocked without the slide: it was a page, not a drawer leaving.
+  p.style.transition="none";p.classList.remove("open","docked");p.offsetWidth;p.style.transition="";close();return}
+ p.classList.add("docked");if(v==="settings")openSettings();else openSources()}
+document.querySelectorAll(".rail a[data-view]").forEach(a=>{if(a.dataset.view==="notes")return;a.onclick=e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;e.preventDefault();if(a.dataset.view==="settings")setQ="";go(a.dataset.view,true)}});
+document.querySelector(".rail .home").onclick=e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;e.preventDefault();go("board",true)};
+addEventListener("popstate",()=>go(new URLSearchParams(location.search).get("view")));
+// The menu's theme switch while Settings shows: its Theme row follows.
+addEventListener("kz-theme",()=>{if(view==="settings")openSettings()});
 // ---- request sources: links kaizen reads for new ideas. Same panel as settings.
 const SRC="Request sources";
 const srcOpen=()=>$("panel").classList.contains("open")&&$("ptitle").textContent===SRC;
@@ -967,11 +1044,11 @@ async function openSources(){
   const statusHtml=!s.last?`<span class="src-badge dim">Not gathered yet</span>`:s.last.ok?`<span class="src-badge ok"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-6" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`:`<span class="src-badge warn"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none" stroke-width="1.8"/><path d="M8 5v3.5M8 11v.1" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"/></svg>Failed: ${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`;
   return `<div class="src-card" id="src-card-${i}"><div class="src-hd"><div class="src-info"><span class="src-ico" title="${st}">${ico(st==="sheet"?"sheet":st==="doc"?"doc":"link")}</span><span class="src-title" title="${esc(title)}">${esc(title)}</span></div><div class="src-acts"><button class="btn ghost sm" id="src-chk-${i}" data-chk="${i}" aria-label="Check ${esc(title)} now" title="Check this source now">${ico("refresh")} Check</button><button class="btn ghost danger sm" id="src-rm-${i}" data-rm="${i}" aria-label="Remove ${esc(title)}" title="Remove source">${ico("trash")}</button></div></div><div class="src-url"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" title="${esc(s.url)}"><span>${esc(s.url)}</span>${ico("ext")}</a></div><div class="src-status">${statusHtml}</div><div class="src-dest"><span>Ideas go to</span><select class="sel" id="src-mv-${i}" data-mv="${i}" data-k="${esc(s.dir+" "+s.url)}" aria-label="Project of ${esc(title)}">${opts(s.dir,s.project)}</select><button class="btn sm" id="src-mb-${i}" aria-label="Move ${esc(title)} to the chosen project" disabled>Move</button></div></div>`;
  }).join("")+(d&&d.failed||[]).map(f=>`<p style="color:var(--dim)">The sources of ${esc(f)} could not be read.</p>`).join("");
- const emptyState=`<div class="src-empty"><div class="src-empty-ico">${ico("link")}</div><h4>No request sources yet</h4><p>Connect shared links to gather requests into your Ideas backlog. Nothing runs automatically until you start it.</p><div class="src-empty-grid"><div class="src-empty-item"><strong>📊 Google Sheets</strong>Public sheets with idea or task rows. Rows marked Done are skipped.</div><div class="src-empty-item"><strong>📄 Google Docs</strong>Shared public docs with items or notes written line by line.</div><div class="src-empty-item"><strong>🌐 Public links</strong>TSV, CSV, or raw text links containing requests.</div></div></div>`;
+ const emptyState=`<div class="src-empty"><div class="src-empty-ico">${ico("link")}</div><h4>No request sources yet</h4><p>Connect shared links to gather requests into your Ideas backlog. Nothing runs automatically until you start it.</p><div class="src-empty-grid"><div class="src-empty-item"><strong>Google Sheets</strong>Public sheets with idea or task rows. Rows marked Done are skipped.</div><div class="src-empty-item"><strong>Google Docs</strong>Shared public docs with items or notes written line by line.</div><div class="src-empty-item"><strong>Public links</strong>TSV, CSV, or raw text links containing requests.</div></div></div>`;
  const addBox=`<div class="src-add-box"><h3>${ico("plus")} Add a source</h3><div style="display:grid;gap:8px"><div><label for="src-url" class="hint" style="display:block;margin-bottom:4px;font-weight:500;color:var(--ink)">Link</label><input class="sel" id="src-url" aria-label="Link" placeholder="https://docs.google.com/spreadsheets/d/… or public URL" spellcheck="false" autocomplete="off" style="width:100%;max-width:none"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="src-label" class="hint" style="display:block;margin-bottom:4px">Label (optional)</label><input class="sel" id="src-label" aria-label="Label (optional)" placeholder="e.g. Feedback Q4" style="width:100%;max-width:none"></div><div><label for="src-dir" class="hint" style="display:block;margin-bottom:4px">Target project</label><select class="sel" id="src-dir" aria-label="Project this source belongs to" style="width:100%;max-width:none">${dir?"":`<option value="">Choose project…</option>`}${opts(dir)}</select></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><button class="btn pri" id="src-add">Add source</button><span class="hint" style="font-size:11px;color:var(--dim);margin:0">Public links only. For private docs, run /kaizen gather.</span></div></div></div>`;
  $("pbody").innerHTML=(d&&d.error?`<p style="color:var(--dim)">${esc(d.error)}</p>`:!d?`<p style="color:var(--dim)">Sources could not be read.</p>`:topBar+(list.length?`<div class="src-list">${cards}</div>`:emptyState))+addBox;
  $("src-url").value=typed[0];$("src-label").value=typed[1];if(typed[3]!==undefined&&$("src-dir"))$("src-dir").value=typed[3];
- if($("src-to-settings"))$("src-to-settings").onclick=()=>{setQ="sources";openSettings()};
+ if($("src-to-settings"))$("src-to-settings").onclick=()=>{setQ="sources";go("settings",true)};
  const act=async(body,done)=>{const j=await post("/sources",body);if(j.ok){done(j);load()}if(srcOpen())openSources()};
  $("pbody").querySelectorAll("[data-mv]").forEach(m=>{const s=list[+m.dataset.mv],b=$("src-mb-"+m.dataset.mv),to=picked.get(m.dataset.k);
   if(to&&[...m.options].some(o=>o.value===to))m.value=to;
@@ -1048,8 +1125,6 @@ $("shows").onchange=e=>{const i=e.target.dataset.i,d=SP[i]?.dir;if(!d)return;e.t
 $("showall").onclick=()=>{shown.clear();setShown()};
 document.addEventListener("click",e=>{if(!e.target.closest("#showc")){$("showpop").hidden=true;$("show").setAttribute("aria-expanded",false)}});
 $("newtop").onclick=()=>{mode="new";render();$("board").scrollTo(0,0)};
-$("settings").onclick=()=>{setQ="";openSettings()};$("sources").onclick=openSources;
-try{const t=localStorage.getItem("kz-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}
 $("kbd").onclick=()=>$("help").classList.add("on");$("help").onclick=()=>$("help").classList.remove("on");
 document.addEventListener("click",()=>{if(menuKey||clearMenu){menuKey=null;clearMenu=false;render()}});
 document.onkeydown=e=>{
@@ -1057,7 +1132,7 @@ document.onkeydown=e=>{
  if(e.key==="?"){$("help").classList.toggle("on");return}
  if(e.key==="/"&&$("sq")&&$("panel").classList.contains("open")){e.preventDefault();$("sq").focus();return}
  if(e.key==="Escape"){$("help").classList.remove("on");if(mode){mode=null;render()}else close();return}
- if(e.key==="n"){mode="new";render()}
+ if(e.key==="n"){if(view!=="board")go("board",true);mode="new";render()}
  if(e.key==="a"){all=!all;keep(all?null:S.dir);load()}
  const mv={ArrowUp:[0,-1],k:[0,-1],ArrowDown:[0,1],j:[0,1],ArrowLeft:[-1,0],h:[-1,0],ArrowRight:[1,0],l:[1,0]}[e.key];
  // In a run's panel: left/right between its tabs, up/down scroll it. Other panels keep the browser's arrows.
@@ -1077,10 +1152,12 @@ addEventListener("focus",()=>load(true));
 function listen(){const es=new EventSource("/events");es.onmessage=ev=>{if(ev.data==="changed"){load(true);if(srcOpen()&&!$("src-go")?.disabled&&!$("src-add")?.disabled)openSources()}else if(ev.data==="reload")location.reload();else if(ev.data.startsWith("hello ")){const b=ev.data.slice(6);if(boot&&b!==boot)location.reload();boot=b}};es.onerror=()=>{es.close();setTimeout(listen,3000)}}
 // Back to the project picked last time, unless the URL says which view it wants. A
 // plain fetch: a project that is gone should fall back to all, not raise a toast.
+// A page named in the address shows from the first paint; it is filled once the board has loaded.
+const v0=new URLSearchParams(location.search).get("view");markView(["settings","sources"].includes(v0)?v0:"board");document.body.classList.toggle("paged",["settings","sources"].includes(v0));
 (async()=>{let d;try{d=localStorage.getItem("kz-proj")}catch(e){}
  if(d&&!urlAll)try{if((await fetch("/cd",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({dir:d})})).ok)all=false;else keep()}catch(e){}
  try{const f=JSON.parse(sessionStorage.getItem("kz-form"));if(f)[mode,modeKey]=f}catch(e){}
- load().then(deep);listen()})();
+ load().then(()=>{go(v0);deep()});listen()})();
 </script>
 </body>
 </html>

@@ -26,7 +26,7 @@ Block-glyph ASCII art, the same one the installer prints. Two sizes exist:
 - Large, 6 rows (`assets/make-images.py`, `WORD`) for images.
 - Compact, 3 rows (`cli/dashboard.ts`, `WORDMARK`) for the terminal header.
 
-On the web, use the compact one inside a `<pre>` in `--mono`, never an image, so it
+On the web, use the compact one inside a `<pre>` in `--mono`, at the top of the side menu, never an image, so it
 stays crisp at any DPI and inherits the theme colour. Vertical gradient from `--ink-hi`
 at the top row to `--accent` at the bottom row (the banner does the same, row by row).
 The block wordmark is the one terminal-native element the web board keeps: it is the
@@ -53,7 +53,8 @@ Rules:
     (traced outline) before the web board ships; PNG at 460 px is the fallback
     (`kaizen-avatar.png`).
 - Placement: empty states only (no ideas, no runs) at 120 px centred with one line of
-  copy under it. Not in the header; the wordmark carries the header alone. It is not a loading spinner and not a favicon at 16 px, where the lines
+  copy under it, and at 36 px as the logo of the collapsed side menu (section 6), where
+  the wordmark does not fit. Not in the header. It is not a loading spinner and not a favicon at 16 px, where the lines
   collapse; the favicon is the wordmark `K` block.
 - Never animated beyond a 200 ms fade-in on empty states.
 - Never cropped: umbrella tip and tail must both be visible.
@@ -163,22 +164,33 @@ Mouse first. Every action is a visible control or a menu item; keys are a second
 listed behind a `Keyboard shortcuts` link in the footer, never the only way.
 
 ```
-┌ header ──────────────────────────────────────────────────────────────┐
-│ KAIZEN (ascii)   [~/code/acme-api ▾]                 [New idea]  ⚙   │
-├ strip ───────────────────────────────────────────────────────────────┤
-│ ! 2 waiting on you   ◔ 1 running   ◑ 1 stalled          3 ideas · 7 runs │
-├ columns ─────────────────────────────────────────────────────────────┤
-│ Ideas 3  +     Planning 1      Building 2      Review 1      Done 2  │
-│ ┌────────┐     ┌────────┐      ┌────────┐      ┌────────┐   ┌──────┐ │
-│ │ card   │     │ card   │      │ card   │      │ card   │   │ card │ │
-├ footer ──────────────────────────────────────────────────────────────┤
-│ ◌ idea  ◔ running  ! waiting on you  ● done       Keyboard shortcuts │
-└──────────────────────────────────────────────────────────────────────┘
+┌ side menu 220 ─┬ header ───────────────────────────────────────────────┐
+│ KAIZEN     [▯] │ Board  [~/code/acme-api ▾]                 [New idea] │
+│                ├ columns ──────────────────────────────────────────────┤
+│ ▥ Board        │ Ideas 3  +   Planning 1   Building 2   Review   Done 2 │
+│ ▤ Notes        │ ┌────────┐   ┌────────┐   ┌────────┐            ┌────┐ │
+│ ⛓ Sources      │ │ card   │   │ card   │   │ card   │            │card│ │
+│ ⚙ Settings     │                                                       │
+│                ├ footer ───────────────────────────────────────────────┤
+│ [☀ Light|☾ Dark]│ ◌ idea ◔ running   ! 2 waiting · 3 ideas  Keyboard … │
+└────────────────┴───────────────────────────────────────────────────────┘
 ```
 
-- Header: `--bg-2` ground, the compact block wordmark (section 1), project `<select>` (at
-  most `320px` wide), then right-aligned: `New idea` primary text button and a gear
-  icon for Settings. The mascot is not in the header.
+- Side menu: the same on the board and the notebook (a test holds the markup, CSS and
+  script equal). `220px`, `--bg-2`, 1 px `--line` right border. Top: the compact
+  wordmark (section 1), a link to the board, and an icon button that collapses the
+  menu. Then four items, each an icon and a word, `34px` tall, `13px` weight 500
+  `--dim`, `--r-s`, `--hover` fill on hover: Board, Notes, Sources, Settings. The page
+  you are on has an `--accent` 14 % fill, `--ink` text and an `--accent` icon. At the
+  bottom, the theme switch: two segments, Light and Dark, on a `--hover` track; the one
+  on screen is raised on `--bg-2` with `--shadow-1`. It sets the same per-browser value
+  as the Theme setting, which keeps the third choice, System.
+- Collapsed, the menu is `60px` of icons with their names as tooltips, the wordmark
+  replaced by the tanuki at `36px`, and the theme segments stacked. The collapse button
+  remembers its choice per browser; with no choice made, the menu is collapsed under
+  `1100px`, and on a phone (under `640px`) always, with no button.
+- Header: `--bg-2` ground, the page name at `17px` weight 600, project `<select>` (at
+  most `320px` wide), then right-aligned the `New idea` primary text button.
 - Strip: one line of counts. Each count is a pill with a 1 px `--line` ring and its
   status icon, and is a filter toggle; the active filter gets a `--dim` 12 % fill.
   `waiting on you` is `--warn` with a `--warn` ring.
@@ -277,15 +289,20 @@ of the bullet: ticked in `--accent` when done, empty when open, empty with the t
 - running: `Abandon run` (ghost)
 - done or abandoned: no footer
 
-Settings opens in the same panel, one row per setting: its name (weight 500) with its
+Settings and Request sources are pages, not drawers: the same panel docked beside the
+side menu, no scrim, no close button, its title at `20px` and its content in a centred
+`760px` column. Each has its own address (`/?view=settings`, `/?view=sources`), so Back
+and reload return to it. Opening a card from anywhere goes back to the board first.
+
+Settings shows one row per setting: its name (weight 500) with its
 one-sentence help always visible under it in `--dim`, and its control on the right.
 Three controls: a switch for on/off (36 × 20 px track, `--accent` when on, white
 thumb), one segment per value for a small number (the chosen one `--accent`), a select
 for a choice. A path is a text field. Rows are divided by 1 px `--line`. Config keys
 are not shown; the settings file path is the tooltip on the panel's sub-line. Theme
-lives here, not in the header.
+lives here too, beside the side menu's switch.
 
-Request sources opens in the same panel from a link icon left of the gear, one row per
+Request sources shows one row per
 source in the settings row shape: its label (or host) at weight 500, the full link and
 the last result with its age under it in `--dim`, a ghost `Remove` on the right. A
 failed gather is said in words in `--ink` at weight 500, not by colour: `--warn` text
@@ -299,17 +316,17 @@ Text buttons: `13px` weight 500, `--r-s`, 1 px `--line`, `--bg-2`, `--shadow-1`;
 border or shadow and takes a `--dim` 12 % fill on hover. Icon buttons are 34 px
 squares (26 px inside cards), `--dim` at rest, `--ink` on a `--dim` 12 % fill on hover,
 always with `title` and `aria-label`. Icons are inline SVG symbols, 1.6 px stroke,
-round caps: plus, gear, link, play, pen, x, trash, more. No icon fonts, no emoji.
+round caps: plus, gear, link, play, pen, x, trash, more, and in the side menu board, note, collapse, sun, moon. No icon fonts, no emoji.
 
 ### Notebook
 
 A second page, `/notebook`, for writing: markdown notes as files under
-`<state>/notes/`, folders and all. The board reaches it from a note icon left of the
-link icon; the notebook's wordmark and a `Board` ghost button lead back.
+`<state>/notes/`, folders and all. Notes in the side menu leads here and Board leads
+back; the notebook has the same side menu as the board.
 
 ```
 ┌ header ─────────────────────────────────────────────────────────────┐
-│ KAIZEN  Notebook  [~/code/acme ▾]                 Board  [New note] │
+│ (side menu) Notebook  [~/code/acme ▾]                     [New note] │
 ├ sidebar 260 ─────┬ paper ──────────────────────────────────────────┤
 │ [Search, #tag  ] │            Standup                               │
 │ TAGS             │            Work · Saved                     🗑   │
@@ -370,7 +387,7 @@ link icon; the notebook's wordmark and a `Board` ghost button lead back.
   the paper side with `56px` gutters). An arrows icon in the note's `--dim` line
   switches; the choice is kept per browser.
 - Full screen is off by default. A maximise / minimise icon in the note's `--dim`
-  line turns it on or off; `Esc` turns it off. While on, header and sidebar are hidden
+  line turns it on or off; `Esc` turns it off. While on, the side menu, header and sidebar are hidden
   and the paper side fills the window, from note to note. With no note open the page
   is never full screen, since picking one needs the sidebar.
 - Under 900 px the sidebar is a drawer from the left behind a list icon, `--shadow-2`,

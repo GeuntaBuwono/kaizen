@@ -215,6 +215,20 @@ test("the notebook's design tokens are the board's, line for line", () => {
   expect(mascot("notes.html")).toBe(mascot("board.html")!);
 });
 
+test("the side menu is the board's on the notebook, line for line", () => {
+  const between = (f: string, from: string, to: string) => {
+    const s = readFileSync(join(root, "web", f), "utf8");
+    const at = s.indexOf(from);
+    expect(at).toBeGreaterThan(-1);
+    return s.slice(at, s.indexOf(to, at) + to.length);
+  };
+  for (const [from, to] of [["/* side menu:", "/* end side menu */"], ['<nav class="rail"', "</script>"]] as const)
+    expect(between("notes.html", from, to)).toBe(between("board.html", from, to));
+  const syms = (f: string) => ["board", "note", "link", "gear", "side", "sun", "moon"].map((n) => readFileSync(join(root, "web", f), "utf8").split("\n").find((l) => l.startsWith(`<symbol id="i-${n}"`)));
+  expect(syms("notes.html")).toEqual(syms("board.html"));
+  expect(syms("board.html").every(Boolean)).toBe(true);
+});
+
 test("web/notebook.js was built from the sources as they are (bun run build:web)", () => {
   const first = readFileSync(OUT, "utf8").split("\n", 1)[0]!;
   expect(first).toContain(`kaizen notebook ${sourceHash()} `);
