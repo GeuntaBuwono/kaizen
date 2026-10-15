@@ -42,3 +42,30 @@ test("gather: a streamed answer lands in the icebox; a used-up plan is recorded,
   expect(out.sent).toEqual(["gpt-test", false, true, "low", "web_search"]);
   expect(out.connected).toBe(true);
 });
+
+test("gather: the plan streams items and completes with an empty output; prose is quoted, not ingested", () => {
+  const out = run(`
+    const state = ${JSON.stringify(join(home, "q", ".kaizen"))};
+    (await import("node:fs")).mkdirSync(state, { recursive: true });
+    const url = src.socialUrl("threads", "bangun rumah");
+    src.addSource(state, url);
+    const ev = (o) => "data: " + JSON.stringify(o) + "\\n\\n";
+    const msg = (text) => ({ type: "message", content: [{ type: "output_text", text }] });
+    const stream = (...items) => new Response(ev({ type: "response.output_item.done", item: { type: "web_search_call", status: "completed" } })
+      + items.map((item) => ev({ type: "response.output_item.done", item })).join("")
+      + ev({ type: "response.completed", response: { output: [] } }));
+    globalThis.fetch = async () => stream(msg("Looking at Threads."), msg(JSON.stringify({ requests: [{ text: "Tolong tambah denah 3D", notes: "@budi · https://www.threads.net/@budi/post/1 · 2026-10-10" }] })));
+    const ok = await cg.gatherSource(state, url, "gpt-test");
+    globalThis.fetch = async () => stream(msg("Threads needs a sign-in, so I found nothing."));
+    const prose = await cg.gatherSource(state, url, "gpt-test");
+    globalThis.fetch = async () => stream(msg('{"requests":"none"}'));
+    const shape = await cg.gatherSource(state, url, "gpt-test");
+    globalThis.fetch = async () => stream();
+    const empty = await cg.gatherSource(state, url, "gpt-test");
+    return { ok: [ok.ok, ok.added], prose: [prose.ok, prose.note], empty: empty.note, shape: [shape.ok, shape.added], ice: src.readIcebox(state).map((s) => s.text) };`);
+  expect(out.ok).toEqual([true, 1]);
+  expect(out.ice).toEqual(["Tolong tambah denah 3D"]);
+  expect(out.prose).toEqual([false, "ChatGPT's answer could not be read: Threads needs a sign-in, so I found nothing."]);
+  expect(out.empty).toBe("ChatGPT sent back an empty answer.");
+  expect(out.shape).toEqual([false, 0]);
+});
