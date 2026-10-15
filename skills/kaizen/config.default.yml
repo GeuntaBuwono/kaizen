@@ -196,6 +196,15 @@ sources:
   # running: off | 1h | 6h | 24h. off means only when you press Gather now or run
   # `kaizen gather`. What is found lands in Ideas; nothing starts on its own.
   every: 24h
+  # Who reads social sources (X, TikTok, Instagram, Threads) when you press Gather:
+  # ask | chatgpt | agent. chatgpt: your ChatGPT plan, signed in from the Icebox, reads
+  # them in the board. agent: your coding tool opens on /kaizen gather. ask: the Icebox
+  # offers to connect ChatGPT the first time. Not connected, Gather uses your agent.
+  agent: ask
+  # The model your ChatGPT plan gathers with. Empty: the first one the plan lists.
+  model: ""
+  # How hard that model thinks while gathering: low | medium | high.
+  effort: low
 
 dictation:
   # Whisper model the web board dictates with. Runs in the browser; downloaded once

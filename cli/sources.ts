@@ -385,7 +385,7 @@ export function sift(kind: "sheet" | "doc" | "text", body: string): { items: Ite
   return { items, done };
 }
 
-function setLast(state: string, url: string, last: Last) {
+export function setLast(state: string, url: string, last: Last) {
   const list = readSources(state);
   const src = list.find((s) => s.url === url);
   if (!src) return;

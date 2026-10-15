@@ -28,6 +28,9 @@ nearest first, so a change lands globally unless this project keeps its own conf
 | `subagents.model` | `inherit`, `opus`, `sonnet`, `haiku` | Model the stage subagents run on (Claude Code only) |
 | `subagents.effort` | `inherit`, `low`, `medium`, `high` | Reasoning effort for the stage subagents (Claude Code only) |
 | `sources.every` | `off`, `1h`, `6h`, `24h` | How often the web board checks request sources for new requests, into the icebox, while it runs |
+| `sources.agent` | `ask`, `chatgpt`, `agent` | Who reads social sources when Gather is pressed: the ChatGPT plan signed in from the Icebox, or your agent on `/kaizen gather` |
+| `sources.model` | text | Model the ChatGPT plan gathers with; empty takes the first it lists |
+| `sources.effort` | `low`, `medium`, `high` | Reasoning effort of that model while gathering |
 | `agent.default` | `auto`, `claude`, `codex`, `agy`, `opencode`, `gemini` | Coding agent to launch from dashboard backlog |
 
 Rules for writing the file:

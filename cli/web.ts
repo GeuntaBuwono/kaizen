@@ -11,6 +11,7 @@ import {
 } from "./state.ts";
 import { attachPty, writePty, resizePty, ptyState, ptyKeys, adoptLoginEnv } from "./pty.ts";
 import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, gatherSource, gatherAll, gatherDirs, due, socialUrl, socialOf } from "./sources.ts";
+import * as chatgpt from "./chatgpt.ts";
 import { listNotes, saveNote, renameNote, deleteNote, boardIndex, linksTo } from "./notes.ts";
 
 const PAGE = join(dirname(import.meta.dir), "web", "board.html");
@@ -178,10 +179,11 @@ export async function web(repoDir: string, opts: Opts = {}) {
   // The schedule: once a minute, gather every request source that is due. It writes
   // icebox.json and sources.json only, never a state.json, and starts nothing. All of
   // it sits in a try: an uncaught error here would end the board.
-  const every = async () => {
+  const setting = async (key: string) => {
     const { listSettings } = await import("./settings.ts");
-    return listSettings(repoDir).rows.find((r) => r.key === "sources.every")?.value ?? "off";
+    return listSettings(repoDir).rows.find((r) => r.key === key)?.value ?? "";
   };
+  const every = async () => (await setting("sources.every")) || "off";
   let busy = false;
   const gather = setInterval(async () => {
     if (busy) return;
@@ -382,7 +384,7 @@ export async function web(repoDir: string, opts: Opts = {}) {
           try { icebox.push(...readIcebox(d).filter((s) => s.status === "new").map((s) => ({ ...s, dir: d, project: label(d) }))); }
           catch { failed.push(label(d) + " (icebox)"); }
         }
-        return json({ sources, icebox, failed, every: await every() });
+        return json({ sources, icebox, failed, every: await every(), gatherer: { use: await setting("sources.agent"), ...chatgpt.status() } });
       }
 
       // The Run form's choices for one project: installed tools and their models.
@@ -400,7 +402,40 @@ export async function web(repoDir: string, opts: Opts = {}) {
 
       if (req.method === "GET" && path === "/settings") {
         const { listSettings } = await import("./settings.ts");
-        return json(listSettings(repoDir));
+        const cfg = listSettings(repoDir);
+        // Connected, the model is chosen from what the plan offers rather than typed.
+        const m = cfg.rows.find((r) => r.key === "sources.model");
+        if (m && chatgpt.status().connected) {
+          try {
+            const slugs = (await chatgpt.models()).map((x) => x.slug);
+            Object.assign(m, { text: false, values: ["", ...slugs, ...(m.value && !slugs.includes(m.value) ? [m.value] : [])] });
+          } catch { /* stays a text field */ }
+        }
+        return json(cfg);
+      }
+
+      // Sign in with ChatGPT comes back here, in the browser tab the Icebox opened.
+      if (req.method === "GET" && path === "/callback") {
+        const why = await chatgpt.callback(url.searchParams);
+        if (!why) {
+          const { setSetting } = await import("./settings.ts");
+          setSetting(repoDir, "sources.agent", "chatgpt");
+          changed();
+        }
+        const msg = why ? `Could not connect ChatGPT: ${why}` : `ChatGPT connected${chatgpt.status().email ? ` as ${chatgpt.status().email}` : ""}. Gather now reads social sources with your plan. You can close this tab.`;
+        return new Response(`<!doctype html><meta charset="utf-8"><title>kaizen</title><body style="font:15px system-ui;padding:40px;max-width:560px;margin:auto">${msg.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}</body>`, { headers: { "content-type": "text/html; charset=utf-8" } });
+      }
+
+      // Connect or disconnect the ChatGPT plan. The page opens the URL it is handed.
+      if (req.method === "POST" && path === "/chatgpt") {
+        if (!local(req)) return bad("cross-origin write refused", 403);
+        let body: any;
+        try { body = await req.json(); } catch { return bad("json body expected"); }
+        const { setSetting } = await import("./settings.ts");
+        if (body.op === "connect") return json({ ok: true, url: await chatgpt.authorizeUrl(Number(url.port)) });
+        if (body.op === "disconnect") { chatgpt.signOut(); setSetting(repoDir, "sources.agent", "agent"); changed(); return json({ ok: true }); }
+        if (body.op === "skip") { setSetting(repoDir, "sources.agent", "agent"); changed(); return json({ ok: true }); }
+        return bad("unknown op");
       }
 
       if (req.method === "POST" && path === "/settings") {
@@ -555,8 +590,15 @@ export async function web(repoDir: string, opts: Opts = {}) {
               const why = moveSource(dir, body.to, link);
               if (why) return bad(why, why === "no such source" ? 404 : 409);
             } else if (body.op === "agent") {
-              // Kaizen never reads a social source: open the agent on /kaizen gather, in
-              // a terminal, since there is no card to run it in.
+              // Kaizen never fetches a social source itself. The ChatGPT plan reads it when
+              // connected and chosen; otherwise the agent opens on /kaizen gather, in a
+              // terminal, since there is no card to run it in.
+              if (await setting("sources.agent") === "chatgpt" && chatgpt.status().connected) {
+                if (!readSources(dir).some((s) => s.url === link)) return bad("no such source", 404);
+                results = [await chatgpt.gatherSource(dir, link, await setting("sources.model"), (await setting("sources.effort")) || "low")];
+                changed();
+                return json({ ok: true, via: "chatgpt", results });
+              }
               if (dir === join(home, ".kaizen")) return bad("no project to gather in", 409);
               const r = launchRun({ severity: null, where: null, text: "gather", raw: "gather" }, dir);
               return json(r.ok ? { ok: true, agent: r.agent } : { ok: false, why: r.why, manual: r.manual, agent: r.agent }, r.ok ? 200 : 500);
