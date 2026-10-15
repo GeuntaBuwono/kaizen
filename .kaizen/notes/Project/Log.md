@@ -22,3 +22,4 @@ updated: 2026-10-15
 - 2026-10-15 release — 1.31.0: update alert in Settings with one-click upgrade and board restart; reply styles and Regenerate in the Icebox
 - 2026-10-15 run 2026-10-15-icebox-reply-layout — Sources and icebox (reply row layout, shorter Icebox copy)
 - 2026-10-15 run 2026-10-15-threads-send-button — Sources and icebox (Threads reply sends from the inline composer, issue #6)
+- 2026-10-15 run 2026-10-15-sources-cant-gather — Sources and icebox (GitHub issues links via the API; social reads wait for late posts)

@@ -219,7 +219,8 @@ export async function readPage(page: Page, url: string, platform: string, max = 
   for (let i = 0, still = 0; i < 12 && seen.size < max && still < 3; i++) {
     const before = seen.size;
     for (const p of await page.js<any[]>(COLLECT(re)) ?? []) if (!seen.has(p.link) && onPlatform(p.link)) seen.set(p.link, p);
-    still = seen.size === before ? still + 1 : 0;
+    // A page that renders its posts late is not empty: stop early only once some arrived.
+    still = seen.size && seen.size === before ? still + 1 : 0;
     await page.js("window.scrollBy(0, window.innerHeight * 1.5)");
     await Bun.sleep(1500);
   }

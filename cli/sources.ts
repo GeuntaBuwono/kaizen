@@ -285,9 +285,13 @@ export async function resolvesPublic(host: string, lookup: Lookup = dnsLookup): 
 }
 
 // Google serves a sheet or a doc as plain text from its export address, to anyone
-// the share setting allows. Anything else is fetched as given.
-export function exportUrl(raw: string): { url: string; kind: "sheet" | "doc" | "text" } {
+// the share setting allows. A GitHub repo's issues page is HTML; its open issues
+// come from the public API instead. Anything else is fetched as given.
+export type Kind = "sheet" | "doc" | "text" | "github";
+export function exportUrl(raw: string): { url: string; kind: Kind } {
   const u = new URL(raw);
+  const gh = u.hostname.replace(/^www\./, "") === "github.com" && /^\/([\w.-]+)\/([\w.-]+)\/issues\/?$/.exec(u.pathname);
+  if (gh) return { url: `https://api.github.com/repos/${gh[1]}/${gh[2]}/issues?state=open&per_page=50`, kind: "github" };
   if (u.hostname === "docs.google.com") {
     // Signed in to several accounts, Google puts /u/<n> after the first segment.
     const pub = /^\/spreadsheets(?:\/u\/\d+)?\/d\/e\/([\w-]+)\/pub/.exec(u.pathname);
@@ -312,7 +316,7 @@ type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 
 // No cookie, no authorization, no redirect followed unchecked: every hop goes
 // through the same guard as the first address.
-export async function fetchText(url: string, doFetch: Fetch = fetch, lookup: Lookup = dnsLookup): Promise<{ ok: true; body: string } | { ok: false; note: string }> {
+export async function fetchText(url: string, doFetch: Fetch = fetch, lookup: Lookup = dnsLookup, json = false): Promise<{ ok: true; body: string } | { ok: false; note: string }> {
   const signal = AbortSignal.timeout(15000);
   for (let hop = 0; hop <= 5; hop++) {
     const why = checkUrl(url);
@@ -322,7 +326,7 @@ export async function fetchText(url: string, doFetch: Fetch = fetch, lookup: Loo
     const pub = await resolvesPublic(host, lookup);
     if (pub === null) return { ok: false, note: hop ? "The link redirected to an address that could not be found." : "The link's address could not be found. Check it for a typo." };
     if (!pub) return { ok: false, note: "Refused: not a public address." };
-    const res = await doFetch(url, { redirect: "manual", credentials: "omit", signal, headers: { accept: "text/plain, text/*" } });
+    const res = await doFetch(url, { redirect: "manual", credentials: "omit", signal, headers: { accept: json ? "application/json" : "text/plain, text/*" } });
     if (res.status >= 300 && res.status < 400) {
       const to = res.headers.get("location");
       if (!to) return { ok: false, note: `Redirect with nowhere to go (HTTP ${res.status}).` };
@@ -332,7 +336,7 @@ export async function fetchText(url: string, doFetch: Fetch = fetch, lookup: Loo
     if (res.status === 401 || res.status === 403) return { ok: false, note: SIGN_IN };
     if (!res.ok) return { ok: false, note: `The link answered HTTP ${res.status}.` };
     const type = (res.headers.get("content-type") ?? "").toLowerCase();
-    if (!type.startsWith("text/") || type.startsWith("text/html")) return { ok: false, note: UNREADABLE };
+    if (json ? !type.startsWith("application/json") : !type.startsWith("text/") || type.startsWith("text/html")) return { ok: false, note: UNREADABLE };
     // Read no further than the cap; a cut-off last line is dropped, not gathered half.
     const chunks: Uint8Array[] = [];
     let size = 0;
@@ -358,11 +362,15 @@ const DONE = /^(done|finish|finished)$/i;
 
 type Item = { text: string; notes?: string };
 
-export const split = (kind: "sheet" | "doc" | "text", body: string): Item[] => sift(kind, body).items;
+export const split = (kind: Kind, body: string): Item[] => sift(kind, body).items;
 
 // The requests, and how many rows were left out for their status. A row left out is
 // never handed to ingest, so it is not marked seen: reopened, it is gathered then.
-export function sift(kind: "sheet" | "doc" | "text", body: string): { items: Item[]; done: number } {
+export function sift(kind: Kind, body: string): { items: Item[]; done: number } {
+  // Pull requests come back from the issues API too; they are not requests. The notes
+  // are the number and link only, so an edited body does not make the issue new.
+  if (kind === "github") return { items: (JSON.parse(body) as any[]).filter((i) => !i.pull_request && typeof i.title === "string")
+    .map((i) => ({ text: i.title, notes: `#${i.number} · ${i.html_url}` })), done: 0 };
   const rows = body.split(/\r?\n/);
   if (kind !== "sheet") return { items: rows.filter((r) => r.trim()).map((text) => ({ text })), done: 0 };
   const cells = rows.map((r) => r.split("\t").map((c) => c.trim()));
@@ -425,10 +433,10 @@ export async function gatherSource(state: string, url: string, doFetch?: Fetch, 
   }
   try {
     const target = exportUrl(url);
-    const got = await fetchText(target.url, doFetch, lookup);
+    const got = await fetchText(target.url, doFetch, lookup, target.kind === "github");
     if (got.ok) {
       const { items, done } = sift(target.kind, got.body);
-      return record(state, url, ingest(state, url, items), got.body.split("\n").filter((r) => r.trim()).length, done);
+      return record(state, url, ingest(state, url, items), target.kind === "github" ? undefined : got.body.split("\n").filter((r) => r.trim()).length, done);
     }
     const last = { at: new Date().toISOString(), ok: false, added: 0, note: got.note };
     setLast(state, url, last);

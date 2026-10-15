@@ -217,7 +217,9 @@ the text that lands in the icebox is always the post's own. A source that never 
 up anything says *no requests found*; *the page showed no posts* means the platform's
 own search found nothing; *read 30 posts, none fit this project* is what it says; and
 *nothing new* means everything it found is already in the icebox. Google Sheets, Docs and plain-text links are read as they are, with
-no relevance check: every request in them lands in the icebox.
+no relevance check: every request in them lands in the icebox. A public GitHub
+repository's issues link (`github.com/<owner>/<repo>/issues`) gathers its open issues, titles
+only, pull requests left out.
 
 The icebox reads like an inbox: one row per request as the source wrote it, grouped
 by category, with dropdowns beside the count to narrow it by category and by source.

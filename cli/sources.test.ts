@@ -688,3 +688,22 @@ test("a reply is stamped once on its icebox item; a second is refused", () => {
     expect(markReplied(state, "a1")).toBe("already replied");
   } finally { rmSync(state, { recursive: true, force: true }); }
 });
+
+test("a GitHub issues link is read through the API: open issues, no pull requests", async () => {
+  const api = "https://api.github.com/repos/hfadhlullah/kaizen/issues?state=open&per_page=50";
+  expect(exportUrl("https://github.com/hfadhlullah/kaizen/issues")).toEqual({ url: api, kind: "github" });
+  expect(exportUrl("https://github.com/hfadhlullah/kaizen/issues/?q=is%3Aopen").url).toBe(api);
+  expect(exportUrl("https://github.com/hfadhlullah/kaizen/issues/6").kind).toBe("text");
+  expect(exportUrl("https://github.com/hfadhlullah/kaizen").kind).toBe("text");
+  const body = JSON.stringify([
+    { number: 7, title: "TikTok source shows no posts", html_url: "https://github.com/o/r/issues/7", body: "x" },
+    { number: 8, title: "Bump deps", html_url: "https://github.com/o/r/pull/8", pull_request: {} },
+  ]);
+  expect(split("github", body)).toEqual([{ text: "TikTok source shows no posts", notes: "#7 · https://github.com/o/r/issues/7" }]);
+  let accept = "";
+  const json = async (_u: string, i: RequestInit) => { accept = new Headers(i.headers).get("accept")!; return new Response(body, { headers: { "content-type": "application/json; charset=utf-8" } }); };
+  expect((await fetchText(api, json, pub, true)).ok).toBe(true);
+  expect(accept).toBe("application/json");
+  // JSON only when asked: a plain source answering JSON is still refused.
+  expect(await fetchText(api, json, pub)).toEqual({ ok: false, note: UNREADABLE });
+});

@@ -27,6 +27,8 @@ Shared links (sheets, docs, social searches) kaizen reads for requests; each req
 - `~/.kaizen/browser/` holds live sign-in cookies (0700). A visible login window locks the profile; a read meanwhile says to close it.
 - The timed gather (`sources.every`) still skips social sources (`AGENT_ONLY`); only Gather reads them. Instagram opens each post page, so a 40-post read takes ~3 minutes.
 - A source whose `seen` list is empty reports "no requests found", never "nothing new" (`record()`).
+- A `github.com/<owner>/<repo>/issues` link is read from the public API (`exportUrl` kind `github`, `fetchText(..., json)`): open issues, pull requests dropped, notes `#n · link` only so an edited body is not a new item. Private repos answer 404; the 60/h unauthenticated limit answers 403 (shown as the sign-in note).
+- `readPage` stops after 3 scans with nothing new only once some post was seen; an empty page scans all 12 rounds (~20 s), since TikTok can render its search late.
 - `sift` finds a sheet's header by shape; test any change against a fixed set of sheet shapes, old vs new side by side (`.kaizen/memory.md`).
 - The Sources panel rebuilds on every action; controls need an id and an explicit step (`.kaizen/memory.md`).
 
