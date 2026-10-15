@@ -10,7 +10,7 @@ import {
   launchMode, readSessions, ownerOf, resumePrompt,
 } from "./state.ts";
 import { attachPty, writePty, resizePty, ptyState, ptyKeys, adoptLoginEnv } from "./pty.ts";
-import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, gatherSource, gatherAll, gatherDirs, due } from "./sources.ts";
+import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, gatherSource, gatherAll, gatherDirs, due, socialUrl, socialOf } from "./sources.ts";
 import { listNotes, saveNote, renameNote, deleteNote, boardIndex, linksTo } from "./notes.ts";
 
 const PAGE = join(dirname(import.meta.dir), "web", "board.html");
@@ -376,7 +376,7 @@ export async function web(repoDir: string, opts: Opts = {}) {
         const sources = [], icebox = [], failed = [];
         for (const d of dir ? [dir] : states(true)) {
           // The seen list is bookkeeping, not something the page shows.
-          try { sources.push(...readSources(d).map(({ seen, ...s }) => ({ ...s, dir: d, project: label(d) }))); }
+          try { sources.push(...readSources(d).map(({ seen, ...s }) => ({ ...s, social: socialOf(s.url), dir: d, project: label(d) }))); }
           catch { failed.push(label(d)); }
           // Only what still waits for a decision; promoted and dismissed items are record.
           try { icebox.push(...readIcebox(d).filter((s) => s.status === "new").map((s) => ({ ...s, dir: d, project: label(d) }))); }
@@ -526,7 +526,9 @@ export async function web(repoDir: string, opts: Opts = {}) {
         // Request sources. Gathering fills the icebox and nothing else: no idea is
         // made and no run starts here.
         if (path === "/sources") {
-          const link = String(body.url ?? "").trim();
+          // A social source arrives as a platform and what to follow; the link is built here.
+          const link = body.op === "add" && typeof body.platform === "string" ? socialUrl(body.platform, String(body.query ?? "")) ?? "" : String(body.url ?? "").trim();
+          if (body.op === "add" && typeof body.platform === "string" && !link) return bad("type a keyword, #hashtag or @account to follow");
           // A source belongs to the project the request names. The fallback above
           // (where the board started, or the global dir) is a guess, and a guess
           // here puts someone's requests in the wrong project.

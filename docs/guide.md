@@ -189,8 +189,19 @@ a header the request is one column for the whole sheet, the one holding the most
 `Finish` or `Finished` is left out, and gathered later if its status changes. A doc or
 a plain-text link gives one request per line.
 
+A source can also be social media: switch the form to **Social**, pick X, TikTok,
+Instagram or Threads, and type a keyword, a `#hashtag` or an `@account` to follow.
+Kaizen stores it as that platform's public search, tag or profile link and never reads
+it itself — those pages need a sign-in. Run `/kaizen gather` in your agent: it reads
+recent public posts (falling back to a web search on that site), copies each post's
+text as a request with its author, link and date as notes, and puts them in the
+icebox under the source's category. From a terminal, `kaizen sources add` with the
+platform link works the same.
+
 The icebox reads like an inbox: one row per request as the source wrote it, grouped
-by category, with a chip per source to narrow the list. Open a row to see the row's
+by category, with dropdowns beside the count to narrow it by category and by source.
+In *All projects* a project dropdown narrows it too; it is the board's own *Showing*
+picker, so the board and the icebox show the same projects. Open a row to see the row's
 other cells and promote it under a title of your own; **Promote** makes it an idea in
 Ideas, with a note saying where it came from and a *gathered* chip; **Dismiss** sets it
 aside. Check several rows to promote or dismiss them together (each promoted row

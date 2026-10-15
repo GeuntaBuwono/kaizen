@@ -8,7 +8,7 @@ import { readInbox, writeInbox, replaceIdea, parseItem } from "./state.ts";
 import {
   readSources, addSource, removeSource, ingest, checkUrl, resolvesPublic, exportUrl, fetchText, split, sift,
   gatherSource, gatherAll, due, SIGN_IN, UNREADABLE, CAP, moveSource, gatherDirs, writeSources,
-  readIcebox, writeIcebox, promote, dismiss, setCategory,
+  readIcebox, writeIcebox, promote, dismiss, setCategory, socialUrl, socialOf, AGENT_ONLY, PLATFORMS,
 } from "./sources.ts";
 
 const root = mkdtempSync(join(tmpdir(), "kaizen-src-"));
@@ -639,3 +639,41 @@ test("the board refuses to add a source without a project, and moves one between
     expect(listedIce).toEqual([]);
   } finally { proc.kill(); await proc.exited; }
 }, 30_000);   // a cold board start is slow on Windows
+
+test("socialUrl: every platform, for a keyword, a #tag and an @account, is a public https link of that platform", () => {
+  for (const p of Object.keys(PLATFORMS)) for (const q of ["dark mode", "#darkmode", "@kaizen_app"]) {
+    const u = socialUrl(p, q)!;
+    expect(checkUrl(u)).toBeNull();
+    expect(socialOf(u)).toBe(p);
+  }
+  expect(socialUrl("x", "@kaizen_app")).toBe("https://x.com/kaizen_app");
+  expect(socialUrl("tiktok", "#darkmode")).toBe("https://www.tiktok.com/tag/darkmode");
+  expect(socialUrl("instagram", "#darkmode")).toBe("https://www.instagram.com/explore/tags/darkmode/");
+  expect(socialUrl("threads", "dark mode")).toBe("https://www.threads.net/search?q=dark%20mode");
+  expect(socialUrl("x", "  ")).toBeNull();
+  expect(socialUrl("myspace", "x")).toBeNull();
+  // What to follow cannot change the path or add a parameter.
+  for (const p of Object.keys(PLATFORMS)) for (const q of ["a&f=top#x", "@../../admin", "#a/b?c", "x\nhost"]) {
+    const u = new URL(socialUrl(p, q)!);
+    expect(socialOf(u.href)).toBe(p);
+    expect(u.hash).toBe("");
+    expect([...u.searchParams.keys()].filter((k) => k !== "q" && k !== "f")).toEqual([]);
+    expect(u.pathname.includes("..")).toBe(false);
+  }
+  expect(socialOf("https://mobile.twitter.com/x")).toBe("x");
+  expect(socialOf("https://threads.com/@a")).toBe("threads");
+  expect(socialOf("https://notx.com/a")).toBeNull();
+  expect(socialOf(SHEET)).toBeNull();
+});
+
+test("a social source is never fetched: gathering records it as one for the agent, and the agent's --stdin lands in the icebox", async () => {
+  const url = socialUrl("x", "#kaizen")!;
+  expect(addSource(state, url, "X: #kaizen", "Social")).toBeNull();
+  const never = async () => { throw new Error("fetched"); };
+  const nolookup = async () => { throw new Error("looked up"); };
+  expect(await gatherSource(state, url, never, nolookup)).toMatchObject({ ok: false, added: 0, note: AGENT_ONLY });
+  expect(readSources(state)[0]!.last).toMatchObject({ ok: false, note: AGENT_ONLY });
+  expect(ingest(state, url, [{ text: "Please add a dark mode", notes: "@someone · https://x.com/someone/status/1 · 2026-10-15" }])).toEqual({ added: 1, held: 0 });
+  expect(open()).toMatchObject([{ text: "Please add a dark mode", category: "Social", source: url }]);
+  expect(readInbox(state)).toEqual([]);
+});

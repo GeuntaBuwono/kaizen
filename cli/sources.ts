@@ -48,6 +48,30 @@ export function addSource(state: string, url: string, label?: string, category?:
   return null;
 }
 
+// Social media: the platform's own public search, tag or profile page for what to
+// follow. Those pages need a sign-in or a browser, so kaizen never fetches them; the
+// agent reads them in /kaizen gather. Null when there is nothing to follow.
+export const PLATFORMS: Record<string, string> = { x: "X", tiktok: "TikTok", instagram: "Instagram", threads: "Threads" };
+export function socialUrl(platform: string, query: string): string | null {
+  const q = oneLine(query).slice(0, 100);
+  if (!q || !(platform in PLATFORMS)) return null;
+  const e = encodeURIComponent;
+  const handle = /^@([\w.]{1,30})$/.exec(q)?.[1], tag = /^#([\p{L}\p{N}_]{1,100})$/u.exec(q)?.[1];
+  if (platform === "x") return handle ? `https://x.com/${e(handle)}` : `https://x.com/search?q=${e(q)}&f=live`;
+  if (platform === "tiktok") return handle ? `https://www.tiktok.com/@${e(handle)}` : tag ? `https://www.tiktok.com/tag/${e(tag)}` : `https://www.tiktok.com/search?q=${e(q)}`;
+  if (platform === "instagram") return handle ? `https://www.instagram.com/${e(handle)}/` : tag ? `https://www.instagram.com/explore/tags/${e(tag)}/` : `https://www.instagram.com/explore/search/keyword/?q=${e(q)}`;
+  return handle ? `https://www.threads.net/@${e(handle)}` : `https://www.threads.net/search?q=${e(q)}`;
+}
+const SOCIAL = /^(?:www\.|mobile\.|m\.)?(x\.com|twitter\.com|tiktok\.com|instagram\.com|threads\.net|threads\.com)$/;
+// The platform a link belongs to, or null for any other link.
+export function socialOf(raw: string): string | null {
+  let h: string;
+  try { h = new URL(raw).hostname.toLowerCase().replace(/\.$/, ""); } catch { return null; }
+  const m = SOCIAL.exec(h)?.[1];
+  return !m ? null : m.startsWith("x.") || m.startsWith("twitter.") ? "x" : m.split(".")[0]!;
+}
+export const AGENT_ONLY = "Social posts are gathered by your agent. Run /kaizen gather.";
+
 // What gathered items from this source are filed under. Empty clears it. Items
 // already in the icebox keep the category they arrived with.
 export function setCategory(state: string, url: string, category: string): string | null {
@@ -383,6 +407,11 @@ export function record(state: string, url: string, r: { added: number; held: num
 
 // Never throws. A failure is recorded on the source and marks nothing seen.
 export async function gatherSource(state: string, url: string, doFetch?: Fetch, lookup?: Lookup): Promise<Result> {
+  if (socialOf(url)) {
+    const last = { at: new Date().toISOString(), ok: false, added: 0, note: AGENT_ONLY };
+    try { setLast(state, url, last); } catch { /* as below */ }
+    return { url, ...last };
+  }
   try {
     const target = exportUrl(url);
     const got = await fetchText(target.url, doFetch, lookup);

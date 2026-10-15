@@ -287,14 +287,12 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 .ice-bar .btn,.ice-bulk .btn,.ice-ra .btn{display:inline-flex;align-items:center;gap:6px}
 .ice-bar .btn svg,.ice-bulk .btn svg,.ice-ra .btn svg{width:14px;height:14px}
 .ice-bar input,.ice-row input,.ice-bulk input{accent-color:var(--accent);width:15px;height:15px;margin:0;flex-shrink:0}
-.ice-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
-.ice-chip{font:inherit;font-size:12px;padding:3px 10px;border-radius:var(--r-pill);border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ice-chip:hover{color:var(--ink)}
-.ice-chip.on{background:var(--hover);border-color:transparent;color:var(--ink);font-weight:500}
+.ice-bar .ice-sel{width:auto;max-width:170px;height:28px;font-size:12px;padding:2px 26px 2px 8px}
+@media(max-width:640px){.ice-bar{flex-wrap:wrap}.ice-bar .ice-sel{max-width:none;min-width:0;width:0;flex:1 1 40%}}
 .ice-bulk{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;margin:0 0 8px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--dim) 12%,var(--bg-2));font-size:13px;color:var(--ink)}
 .ice-bulk .end{flex:1}
 .ice-list{display:flex;flex-direction:column;gap:1px}
-.ice-list .ice-cat{margin:0;padding:14px 12px 4px;font-size:12px;font-weight:500}.ice-list .ice-cat:first-child{padding-top:4px}
+.ice-list .ice-cat{margin:0;padding:14px 12px 4px;font-size:12px;font-weight:500}.ice-cat i{font-style:normal;font-weight:400;margin-left:6px}.ice-list .ice-cat:first-child{padding-top:4px}
 .ice-row{border-radius:var(--r-s)}.ice-open{border-radius:0 0 var(--r-s) var(--r-s);margin-top:-1px;background:var(--hover)}.ice-row:has(+.ice-open){border-radius:var(--r-s) var(--r-s) 0 0;background:var(--hover)}
 .ice-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:36px;padding:2px 8px 2px 12px;cursor:pointer}
 .ice-row:hover,.ice-row.cur{background:var(--hover)}
@@ -312,7 +310,6 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 .ice-zero{padding:40px 16px;text-align:center;border:1px solid var(--line);border-radius:var(--r);background:var(--bg-2)}
 .ice-zero h4{margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink)}
 .ice-zero p{margin:0;font-size:12px;color:var(--dim);line-height:1.5}
-.ice-keys{margin:8px 0 0;font-size:11px;color:var(--dim)}
 .ice-open .hint{font-size:12px;color:var(--dim)}
 /* the sources: the run panel's drawer (aside rules), sliding over the icebox page */
 body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
@@ -321,7 +318,7 @@ body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
 .src-sec .sub a{color:var(--accent);text-decoration:none;cursor:pointer}
 .src-sec .sub a:hover{text-decoration:underline}
 @media(hover:none){.ice-ra{display:flex}.ice-age{display:none}}
-@media(max-width:640px){.ice-src,.ice-keys{display:none}.ice-open{padding-left:12px}}
+@media(max-width:640px){.ice-src{display:none}.ice-open{padding-left:12px}}
 .src-list{display:flex;flex-direction:column;gap:10px}
 .src-card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow-1);display:flex;flex-direction:column;gap:9px;transition:border-color .15s}
 .src-card:hover{border-color:color-mix(in srgb,var(--line) 70%,var(--ink))}
@@ -368,13 +365,19 @@ body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
 .src-add{display:grid;gap:12px;margin-top:20px;padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r)}
 .src-add h4{margin:0;font-size:13px;font-weight:600;color:var(--ink)}
 .src-add .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.src-add .two.plat{grid-template-columns:140px 1fr}
+.src-add [hidden]{display:none}
+.src-kind{display:inline-flex;gap:2px;padding:2px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--dim) 12%,var(--bg-2));justify-self:start}
+.src-kind button{font:inherit;font-size:12px;padding:3px 12px;border:0;border-radius:var(--r-pill);background:transparent;color:var(--dim);cursor:pointer}
+.src-kind button[aria-pressed=true]{background:var(--bg-2);color:var(--ink);font-weight:500;box-shadow:var(--shadow-1)}
+.src-add .hd{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .src-add label{display:grid;gap:4px;font-size:12px;font-weight:500;color:var(--ink)}
 .src-add label i{font-style:normal;font-weight:400;color:var(--dim)}
 .src-add .sel{width:100%;max-width:none}
 .src-add .acts{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .src-add .acts .hint{margin:0;font-size:11px;color:var(--dim);line-height:1.4}
 .src-add .acts .btn{flex-shrink:0}
-@media(max-width:480px){.src-add .two{grid-template-columns:1fr}}
+@media(max-width:480px){.src-add .two,.src-add .two.plat{grid-template-columns:1fr}}
 @media(max-width:900px){main{grid-template-columns:1fr;padding-inline:16px;gap:8px}.hdr,.ftr,aside.docked>header,aside.docked>.body{padding-inline:16px}.more{display:grid}.card:hover .age{display:inline}.toast{left:16px;max-width:calc(100% - 32px)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
@@ -397,6 +400,7 @@ body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
 <symbol id="i-open" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></symbol>
 <symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
 <symbol id="i-restore" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-at" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.9 7.9"/></symbol>
 <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
 <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 3v5h-5M3 21v-5h5M20.5 13A9 9 0 0 1 5.7 18.3L3 16M3.5 11A9 9 0 0 1 18.3 5.7L21 8"/></symbol>
@@ -1118,13 +1122,16 @@ const SRC="Icebox";
 // promote form is open and the one the cursor is on (both "<dir> <id>"), the checked
 // items, the source filter ("<dir> <url>"), whether the sources section is open, and
 // whether a bulk action is still posting.
-let iceForm=null,iceCur=null,iceSrc="",srcShow=null,iceBusy=false,iceNav=null;const iceSel=new Set();
+// The category filter, and whether the add form takes a link or a social account/tag. The
+// project filter is the board's own `shown`, so the board and the icebox narrow alike.
+let iceForm=null,iceCur=null,iceSrc="",iceCat="",srcKind="link",srcShow=null,iceBusy=false,iceNav=null;const iceSel=new Set();
+const PLAT={x:"X",tiktok:"TikTok",instagram:"Instagram",threads:"Threads"};
 const srcOpen=()=>$("panel").classList.contains("open")&&$("ptitle").textContent===SRC;
 const ago=at=>{const m=Math.round((Date.now()-Date.parse(at))/60000);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" d ago"};
 async function openSources(){
  stopDictation(true);
  // What is half typed survives a refresh from the server.
- const typed=srcOpen()?[$("src-url")?.value||"",$("src-label")?.value||"",document.activeElement?.id,$("src-dir")?.value,$("src-cat")?.value||""]:["",""];
+ const typed=srcOpen()?[$("src-url")?.value||"",$("src-label")?.value||"",document.activeElement?.id,$("src-dir")?.value,$("src-cat")?.value||"",$("src-plat")?.value,$("src-q")?.value||""]:["",""];
  // So does a project picked on a row but not yet moved.
  const picked=new Map(srcOpen()?[...$("pbody").querySelectorAll("[data-mv]")].map(m=>[m.dataset.k,m.value]):[]);
  // And a promote form half filled, for the item it was typed on.
@@ -1139,58 +1146,78 @@ async function openSources(){
  const d=await fetch("/sources"+q).then(r=>r.json()).catch(()=>null);
  if(!srcOpen())return;
  const host=u=>{try{return new URL(u).hostname}catch{return u}};
- const srcType=u=>{if(u.includes("docs.google.com/spreadsheets")||u.endsWith(".csv")||u.endsWith(".tsv"))return "sheet";if(u.includes("docs.google.com/document"))return "doc";return "link"};
+ const srcType=s=>{if(s.social)return "social";const u=s.url;if(u.includes("docs.google.com/spreadsheets")||u.endsWith(".csv")||u.endsWith(".tsv"))return "sheet";if(u.includes("docs.google.com/document"))return "doc";return "link"};
  const list=d&&d.sources||[],ice=d&&d.icebox||[];
  // A source belongs to one project, named on its row. Picking another only arms Move: a select
  // changes on every arrow key, and each change would have moved the source. The names are the picker's;
  // a row whose project the picker does not list still gets its own, selected, so Move never points elsewhere.
  const opts=(on,name)=>(on&&!S.projects.some(p=>p.dir===on)?`<option value="${esc(on)}" selected>${esc(name||on)}</option>`:"")+S.projects.map(p=>`<option value="${esc(p.dir)}"${p.dir===on?" selected":""}>${esc(p.label)}</option>`).join("");
  const cards=list.map((s,i)=>{
-  const st=srcType(s.url),title=s.label||host(s.url);
-  const statusHtml=!s.last?`<span class="src-badge dim">Not gathered yet</span>`:s.last.ok?`<span class="src-badge ok"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-6" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`:`<span class="src-badge warn"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none" stroke-width="1.8"/><path d="M8 5v3.5M8 11v.1" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"/></svg>Failed: ${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`;
-  return `<div class="src-card" id="src-card-${i}"><div class="src-hd"><div class="src-info"><span class="src-ico" title="${st}">${ico(st==="sheet"?"sheet":st==="doc"?"doc":"link")}</span><span class="src-title" title="${esc(title)}">${esc(title)}</span></div><div class="src-acts"><button class="btn ghost sm" id="src-chk-${i}" data-chk="${i}" aria-label="Check ${esc(title)} now" title="Check this source now">${ico("refresh")} Check</button><button class="btn ghost danger sm" id="src-rm-${i}" data-rm="${i}" aria-label="Remove ${esc(title)}" title="Remove source">${ico("trash")}</button></div></div><div class="src-url"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" title="${esc(s.url)}"><span>${esc(s.url)}</span>${ico("ext")}</a></div><div class="src-status">${statusHtml}</div><div class="src-dest"><span>Category</span><input class="sel" id="src-ct-${i}" data-ct="${i}" data-k="${esc(s.dir+" "+s.url)}" value="${esc(s.category||"")}" placeholder="e.g. Feedback" maxlength="40" aria-label="Category of ${esc(title)}"><button class="btn sm" id="src-cs-${i}" aria-label="Save the category of ${esc(title)}" disabled>Save</button></div><div class="src-dest"><span>Project</span><select class="sel" id="src-mv-${i}" data-mv="${i}" data-k="${esc(s.dir+" "+s.url)}" aria-label="Project of ${esc(title)}">${opts(s.dir,s.project)}</select><button class="btn sm" id="src-mb-${i}" aria-label="Move ${esc(title)} to the chosen project" disabled>Move</button></div></div>`;
+  const st=srcType(s),title=s.label||host(s.url);
+  // A social source is never read by kaizen, so its not-ok is the agent's turn, not a failure.
+  const statusHtml=s.social&&!s.last?.ok?`<span class="src-badge dim">${ico("at")}Gathered by your agent</span><span class="hint" style="margin:0">Run /kaizen gather</span>`:!s.last?`<span class="src-badge dim">Not gathered yet</span>`:s.last.ok?`<span class="src-badge ok"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-6" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`:`<span class="src-badge warn"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none" stroke-width="1.8"/><path d="M8 5v3.5M8 11v.1" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"/></svg>Failed: ${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`;
+  return `<div class="src-card" id="src-card-${i}"><div class="src-hd"><div class="src-info"><span class="src-ico" title="${st==="social"?esc(PLAT[s.social]||"social"):st}">${ico(st==="sheet"?"sheet":st==="doc"?"doc":st==="social"?"at":"link")}</span><span class="src-title" title="${esc(title)}">${esc(title)}</span></div><div class="src-acts">${s.social?"":`<button class="btn ghost sm" id="src-chk-${i}" data-chk="${i}" aria-label="Check ${esc(title)} now" title="Check this source now">${ico("refresh")} Check</button>`}<button class="btn ghost danger sm" id="src-rm-${i}" data-rm="${i}" aria-label="Remove ${esc(title)}" title="Remove source">${ico("trash")}</button></div></div><div class="src-url"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" title="${esc(s.url)}"><span>${esc(s.url)}</span>${ico("ext")}</a></div><div class="src-status">${statusHtml}</div><div class="src-dest"><span>Category</span><input class="sel" id="src-ct-${i}" data-ct="${i}" data-k="${esc(s.dir+" "+s.url)}" value="${esc(s.category||"")}" placeholder="e.g. Feedback" maxlength="40" aria-label="Category of ${esc(title)}"><button class="btn sm" id="src-cs-${i}" aria-label="Save the category of ${esc(title)}" disabled>Save</button></div><div class="src-dest"><span>Project</span><select class="sel" id="src-mv-${i}" data-mv="${i}" data-k="${esc(s.dir+" "+s.url)}" aria-label="Project of ${esc(title)}">${opts(s.dir,s.project)}</select><button class="btn sm" id="src-mb-${i}" aria-label="Move ${esc(title)} to the chosen project" disabled>Move</button></div></div>`;
  }).join("");
  const fails=(d&&d.failed||[]).map(f=>`<p style="color:var(--dim)">The sources of ${esc(f)} could not be read.</p>`).join("");
- const emptyState=`<div class="src-empty"><div class="src-empty-ico">${ico("link")}</div><h4>No request sources yet</h4><p>Connect shared links to gather requests into the icebox, where you choose which become ideas. Nothing runs automatically until you start it.</p><div class="src-empty-grid"><div class="src-empty-item"><strong>Google Sheets</strong>Public sheets with idea or task rows. Rows marked Done are skipped.</div><div class="src-empty-item"><strong>Google Docs</strong>Shared public docs with items or notes written line by line.</div><div class="src-empty-item"><strong>Public links</strong>TSV, CSV, or raw text links containing requests.</div></div></div>`;
- const addBox=`<div class="src-add"><h4>Add a source</h4><label for="src-url"><span>Link</span><input class="sel" id="src-url" placeholder="https://docs.google.com/spreadsheets/d/… or any public link" spellcheck="false" autocomplete="off"></label><div class="two"><label for="src-label"><span>Label <i>optional</i></span><input class="sel" id="src-label" placeholder="e.g. Feedback Q4"></label><label for="src-cat"><span>Category <i>optional</i></span><input class="sel" id="src-cat" placeholder="e.g. Bugs" maxlength="40"></label></div><label for="src-dir"><span>Project</span><select class="sel" id="src-dir">${dir?"":`<option value="">Choose project…</option>`}${opts(dir)}</select></label><div class="acts"><span class="hint">Public links only. For private docs, run /kaizen gather.</span><button class="btn pri" id="src-add">Add source</button></div></div>`;
+ const emptyState=`<div class="src-empty"><div class="src-empty-ico">${ico("link")}</div><h4>No request sources yet</h4><p>Connect shared links to gather requests into the icebox, where you choose which become ideas. Nothing runs automatically until you start it.</p><div class="src-empty-grid"><div class="src-empty-item"><strong>Google Sheets</strong>Public sheets with idea or task rows. Rows marked Done are skipped.</div><div class="src-empty-item"><strong>Google Docs</strong>Shared public docs with items or notes written line by line.</div><div class="src-empty-item"><strong>Public links</strong>TSV, CSV, or raw text links containing requests.</div><div class="src-empty-item"><strong>Social media</strong>A keyword, #hashtag or @account on X, TikTok, Instagram or Threads, read by your agent.</div></div></div>`;
+ const social=srcKind==="social";
+ const addBox=`<div class="src-add"><div class="hd"><h4>Add a source</h4><div class="src-kind" role="group" aria-label="Kind of source"><button id="src-k-link" data-kind="link" aria-pressed="${!social}">Link</button><button id="src-k-social" data-kind="social" aria-pressed="${social}">Social</button></div></div><label for="src-url"${social?" hidden":""}><span>Link</span><input class="sel" id="src-url" placeholder="https://docs.google.com/spreadsheets/d/… or any public link" spellcheck="false" autocomplete="off"></label><div class="two plat"${social?"":" hidden"}><label for="src-plat"><span>Platform</span><select class="sel" id="src-plat">${Object.entries(PLAT).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label><label for="src-q"><span>Follow</span><input class="sel" id="src-q" placeholder="keyword, #hashtag or @account" maxlength="100" spellcheck="false" autocomplete="off"></label></div><div class="two"><label for="src-label"><span>Label <i>optional</i></span><input class="sel" id="src-label" placeholder="${social?"e.g. Mentions on X":"e.g. Feedback Q4"}"></label><label for="src-cat"><span>Category <i>optional</i></span><input class="sel" id="src-cat" placeholder="${social?"e.g. Social":"e.g. Bugs"}" maxlength="40"></label></div><label for="src-dir"><span>Project</span><select class="sel" id="src-dir">${dir?"":`<option value="">Choose project…</option>`}${opts(dir)}</select></label><div class="acts"><span class="hint">${social?"Kaizen signs in nowhere. Your agent reads public posts when you run /kaizen gather.":"Public links only. For private docs, run /kaizen gather."}</span><button class="btn pri" id="src-add">Add source</button></div></div>`;
  // The inbox: one row per request, by project when showing all, then by category,
  // narrowed to one source by its chip. Checked, open and cursor items are kept by key.
  const srcName=it=>{const s=list.find(x=>x.dir===it.dir&&x.url===it.source);return s?s.label||host(s.url):host(it.source)};
  const iceKey=it=>it.dir+" "+it.id,srcKey=it=>it.dir+" "+it.source;
- const bySrc=new Map();ice.forEach(it=>bySrc.set(srcKey(it),{it,n:(bySrc.get(srcKey(it))?.n||0)+1}));
- if(iceSrc&&!bySrc.has(iceSrc))iceSrc="";
- const keys=new Set(ice.map(iceKey));[...iceSel].forEach(k=>keys.has(k)||iceSel.delete(k));
+ // Filters narrow in turn: project (the board's own picker, all projects only), then
+ // category, then source; each chip counts what the filters before it leave.
+ const catOf=it=>it.category||"Uncategorised",count=(xs,f)=>{const m=new Map();xs.forEach(it=>{const k=f(it);m.set(k,{it,n:(m.get(k)?.n||0)+1})});return m};
+ const byProj=dir?new Map():count(ice,it=>it.dir);if(!dir)for(const pd of shown)if(!byProj.has(pd)){const p=showable().find(x=>x.dir===pd);if(p)byProj.set(pd,{it:{dir:pd,project:p.label},n:0})}
+ const inProj=it=>dir||!shown.size||shown.has(it.dir),pv=ice.filter(inProj);
+ const byCat=count(pv,catOf);if(iceCat&&!byCat.has(iceCat))iceCat="";
+ const cv=pv.filter(it=>!iceCat||catOf(it)===iceCat);
+ const bySrc=count(cv,srcKey);if(iceSrc&&!bySrc.has(iceSrc))iceSrc="";
+ const keys=new Set(ice.map(iceKey));
  if(iceForm&&!keys.has(iceForm))iceForm=null;
- const groups=new Map();ice.forEach((it,i)=>{if(iceSrc&&srcKey(it)!==iceSrc)return;const k=(dir?"":(it.project||it.dir)+" · ")+(it.category||"Uncategorised");groups.has(k)||groups.set(k,[]);groups.get(k).push(i)});
+ const groups=new Map();ice.forEach((it,i)=>{if(!inProj(it)||iceCat&&catOf(it)!==iceCat||iceSrc&&srcKey(it)!==iceSrc)return;const k=catOf(it);groups.has(k)||groups.set(k,[]);groups.get(k).push(i)});
  // Rows in the order they are drawn, which is the order j and k walk.
  const order=[...groups.values()].flat();
+ // A checked request a filter hides is unchecked: a bulk action only ever acts on what shows.
+ {const vis=new Set(order.map(i=>iceKey(ice[i])));[...iceSel].forEach(k=>vis.has(k)||iceSel.delete(k))}
  if(!order.some(i=>iceKey(ice[i])===iceCur))iceCur=order.length?iceKey(ice[order[0]]):null;
  const nSel=order.filter(i=>iceSel.has(iceKey(ice[i]))).length;
- const chips=bySrc.size>1?`<div class="ice-chips" role="group" aria-label="Show requests from">${[["",{n:ice.length}],...bySrc].map(([k,{it,n}],j)=>`<button class="ice-chip${iceSrc===k?" on":""}" id="ice-f-${j}" data-sf="${esc(k)}" aria-pressed="${iceSrc===k}">${esc(k?srcName(it):"All")} · ${n}</button>`).join("")}</div>`:"";
- const bar=`<div class="ice-bar">${order.length?`<input type="checkbox" id="ice-all" aria-label="Select every request shown"${nSel&&nSel===order.length?" checked":""}>`:""}<span class="count">${ice.length} waiting</span><span class="end"></span><button class="btn sm" id="src-go"${list.length?"":" disabled"}>${ico("refresh")} Gather all</button><button class="btn ghost sm" id="src-tog" aria-expanded="${srcShow??!list.length}" aria-controls="src-sec">${ico("link")} Sources · ${list.length}</button></div>`+chips;
+ // Filters are plain dropdowns, each shown only when it has a choice to make. The project one
+ // is the board's own picker: one project, or all; several picked on the board read as such.
+ const many=byProj.size>1,opt=(v,on,t)=>`<option value="${esc(v)}"${on?" selected":""}>${esc(t)}</option>`;
+ const pick=(id,label,xs)=>`<select class="sel ice-sel" id="${id}" aria-label="${label}">${xs.join("")}</select>`;
+ const chips=(many?pick("ice-fp","Project",[opt("",!shown.size,"All projects"),...(shown.size>1?[opt("*",true,shown.size+" projects")]:[]),...[...byProj].map(([k,{it}])=>opt(k,shown.size===1&&shown.has(k),it.project||k))]):"")
+  +(byCat.size>1?pick("ice-fc","Category",[opt("",!iceCat,"All categories"),...[...byCat.keys()].map(k=>opt(k,iceCat===k,k))]):"")
+  +(bySrc.size>1?pick("ice-fs","Source",[opt("",!iceSrc,"All sources"),...[...bySrc].map(([k,{it}])=>opt(k,iceSrc===k,srcName(it)))]):"");
+ const bar=`<div class="ice-bar">${order.length?`<input type="checkbox" id="ice-all" aria-label="Select every request shown"${nSel&&nSel===order.length?" checked":""}>`:""}<span class="count">${order.length<ice.length?`${order.length} of ${ice.length}`:ice.length} waiting</span>${chips}<span class="end"></span><button class="btn sm" id="src-go"${list.length?"":" disabled"}>${ico("refresh")} Gather all</button><button class="btn ghost sm" id="src-tog" aria-expanded="${srcShow??!list.length}" aria-controls="src-sec">${ico("link")} Sources · ${list.length}</button></div>`;
  const bulk=iceSel.size?`<div class="ice-bulk" role="toolbar" aria-label="Selected requests"><span>${iceSel.size} selected</span><span class="end"></span><button class="btn sm" id="ice-bp" title="Each becomes its own idea, titled as gathered (p)">${ico("plus")} Promote</button><button class="btn ghost sm" id="ice-bd" title="Dismiss (d)">${ico("x")} Dismiss</button><button class="btn ghost sm" id="ice-bc" title="Clear selection (Esc)">Clear</button></div>`:"";
  // The open item's form: a clean title for the idea's card and the person's own details;
  // what was gathered is added to the idea's notes by the server.
  const form=it=>`<div class="ice-form"><label for="ice-title" class="hint" style="margin:0">Idea title</label><input class="sel" id="ice-title" data-k="${esc(iceKey(it))}" maxlength="200" value="${esc(it.text)}" aria-label="Idea title"><label for="ice-details" class="hint" style="margin:0">Details (optional)</label><textarea class="sel" id="ice-details" rows="3" placeholder="In your own words: what is needed, for whom, why" aria-label="Details (optional)"></textarea><div class="ice-form-acts"><span class="hint">What was gathered is added to the idea's notes.</span><button class="btn ghost sm" id="ice-cancel">Cancel</button><button class="btn pri sm" id="ice-ok">Promote</button></div></div>`;
  const row=i=>{const it=ice[i],k=iceKey(it),open=iceForm===k;
-  return `<div class="ice-row${iceCur===k?" cur":""}${iceSel.has(k)?" sel":""}" data-i="${i}" data-k="${esc(k)}"><input type="checkbox" id="ice-ck-${i}" data-ck="${i}"${iceSel.has(k)?" checked":""} aria-label="Select: ${esc(it.text)}"><button class="ice-t" id="ice-o-${i}" data-o="${i}" aria-expanded="${open}" title="${esc(it.text)}">${esc(it.text)}</button><span class="ice-src" title="${esc(srcName(it))}">${esc(srcName(it))}</span><span class="ice-age">${ago(it.at)}</span><span class="ice-ra"><button class="btn ghost sm" id="ice-pr-${i}" data-pr="${i}" title="Promote to Ideas as gathered (p)" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")}</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" title="Dismiss (d)" aria-label="Dismiss: ${esc(it.text)}">${ico("x")}</button></span></div>`
+  return `<div class="ice-row${iceCur===k?" cur":""}${iceSel.has(k)?" sel":""}" data-i="${i}" data-k="${esc(k)}"><input type="checkbox" id="ice-ck-${i}" data-ck="${i}"${iceSel.has(k)?" checked":""} aria-label="Select: ${esc(it.text)}"><button class="ice-t" id="ice-o-${i}" data-o="${i}" aria-expanded="${open}" title="${esc(it.text)}">${esc(it.text)}</button><span class="ice-src" title="${esc(srcName(it))}">${esc(many?it.project||srcName(it):srcName(it))}</span><span class="ice-age">${ago(it.at)}</span><span class="ice-ra"><button class="btn ghost sm" id="ice-pr-${i}" data-pr="${i}" title="Promote to Ideas as gathered (p)" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")}</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" title="Dismiss (d)" aria-label="Dismiss: ${esc(it.text)}">${ico("x")}</button></span></div>`
    +(open?`<div class="ice-open">${it.notes?`<div class="ice-notes">${esc(it.notes)}</div>`:""}<span class="hint" style="margin:0">From ${esc(srcName(it))} · ${ago(it.at)}</span>${form(it)}</div>`:"")};
- const inbox=ice.length?`<div class="ice-list">${[...groups].map(([g,ix])=>`<div class="ice-cat">${esc(g)} · ${ix.length}</div>${ix.map(row).join("")}`).join("")}</div><p class="hint ice-keys">j k move · o open · x select · p promote · d dismiss · Esc close</p>`
+ const inbox=ice.length&&!order.length?`<div class="ice-zero"><h4>Nothing matches</h4><p>${ice.length} waiting outside these filters.</p><p style="margin-top:10px"><button class="btn sm" id="ice-unf">Clear filters</button></p></div>`:ice.length?`<div class="ice-list">${[...groups].map(([g,ix])=>`<div class="ice-cat">${esc(g)}<i>${ix.length}</i></div>${ix.map(row).join("")}`).join("")}</div>`
   :`<div class="ice-zero"><h4>Inbox zero</h4><p>Nothing waiting. Gather all checks your sources for new requests; /kaizen discover in your agent sorts what comes in.</p></div>`;
  // The sources, in the right-hand drawer: shut until asked for, open by itself while there
  // are none until closed. Slid in only when opened; a rebuild while open shows it in place.
- const shown=srcShow??!list.length,slide=shown&&!$("src-sec")?.classList.contains("open");
- const sec=`<div class="src-scrim${shown&&!slide?" on":""}" id="src-scrim"></div><aside class="src-sec${shown&&!slide?" open":""}" id="src-sec" aria-label="Sources"${shown?"":" inert"}><header><div class="t"><b>Sources</b><div class="sub">${d&&d.every&&d.every!=="off"?`Auto-check every ${esc(d.every)}`:"Auto-check off"} · <a id="src-to-settings" role="button" tabindex="0">Settings</a></div></div><button class="ib" id="src-x" aria-label="Close sources" title="Close">${ico("close")}</button></header><div class="body">${list.length?`<div class="src-list">${cards}</div>`:emptyState}${addBox}</div></aside>`;
+ const drawer=srcShow??!list.length,slide=drawer&&!$("src-sec")?.classList.contains("open");
+ const sec=`<div class="src-scrim${drawer&&!slide?" on":""}" id="src-scrim"></div><aside class="src-sec${drawer&&!slide?" open":""}" id="src-sec" aria-label="Sources"${drawer?"":" inert"}><header><div class="t"><b>Sources</b><div class="sub">${d&&d.every&&d.every!=="off"?`Auto-check every ${esc(d.every)}`:"Auto-check off"} · <a id="src-to-settings" role="button" tabindex="0">Settings</a></div></div><button class="ib" id="src-x" aria-label="Close sources" title="Close">${ico("close")}</button></header><div class="body">${list.length?`<div class="src-list">${cards}</div>`:emptyState}${addBox}</div></aside>`;
  $("pbody").innerHTML=d&&d.error?`<p style="color:var(--dim)">${esc(d.error)}</p>`:!d?`<p style="color:var(--dim)">The icebox could not be read.</p>`:bar+bulk+fails+inbox+sec;
  if(!d||d.error)return;
  if(iceDraft&&iceDraft[0]===iceForm&&$("ice-title")){$("ice-title").value=iceDraft[1];$("ice-details").value=iceDraft[2]}
- if($("src-add")){$("src-url").value=typed[0];$("src-label").value=typed[1];$("src-cat").value=typed[4]||"";if(typed[3]!==undefined&&$("src-dir"))$("src-dir").value=typed[3]}
+ if($("src-add")){if(typed[5])$("src-plat").value=typed[5];$("src-q").value=typed[6]||"";$("src-url").value=typed[0];$("src-label").value=typed[1];$("src-cat").value=typed[4]||"";if(typed[3]!==undefined&&$("src-dir"))$("src-dir").value=typed[3]}
  if($("src-to-settings"))$("src-to-settings").onclick=()=>{setQ="sources";go("settings",true)};
  if(slide){$("src-sec").offsetWidth;$("src-sec").classList.add("open");$("src-scrim").classList.add("on")}
  const srcShut=()=>{srcShow=false;$("src-sec").classList.remove("open");$("src-scrim").classList.remove("on");$("src-sec").inert=true;$("src-tog").setAttribute("aria-expanded","false");$("src-tog").focus()};
  $("src-x").onclick=$("src-scrim").onclick=srcShut;$("src-sec").onkeydown=e=>{if(e.key==="Escape"){e.stopPropagation();srcShut()}};
  $("src-tog").onclick=()=>{if($("src-sec").classList.contains("open"))return srcShut();srcShow=true;openSources().then(()=>srcShow&&$("src-url")?.focus())};
- $("pbody").querySelectorAll("[data-sf]").forEach(b=>b.onclick=()=>{if(iceSrc!==b.dataset.sf)iceSel.clear();iceSrc=b.dataset.sf;openSources()});
+ if($("ice-fs"))$("ice-fs").onchange=e=>{iceSrc=e.target.value;openSources()};
+ if($("ice-fc"))$("ice-fc").onchange=e=>{iceCat=e.target.value;openSources()};
+ if($("ice-fp"))$("ice-fp").onchange=e=>{const v=e.target.value;if(v==="*")return;shown=new Set(v?[v]:[]);setShown();openSources()};
+ if($("ice-unf"))$("ice-unf").onclick=()=>{iceCat=iceSrc="";if(!dir)shown.clear();setShown();openSources()};
+ $("pbody").querySelectorAll("[data-kind]").forEach(b=>b.onclick=()=>{if(srcKind===b.dataset.kind)return;srcKind=b.dataset.kind;openSources().then(()=>$(srcKind==="social"?"src-q":"src-url")?.focus())});
  const act=async(body,done)=>{const j=await post("/sources",body);if(j.ok){done(j);load()}if(srcOpen())openSources()};
  $("pbody").querySelectorAll("[data-mv]").forEach(m=>{const s=list[+m.dataset.mv],b=$("src-mb-"+m.dataset.mv),to=picked.get(m.dataset.k);
   if(to&&[...m.options].some(o=>o.value===to))m.value=to;
@@ -1254,18 +1281,23 @@ async function openSources(){
  if(fPick){const at=ice.findIndex(it=>iceKey(it)===fPick[0]);(at>=0?$(fPick[1]+"-"+at):ci>=0?$("ice-o-"+ci):null)?.focus()}
  const was=!fPick&&typed[2]&&$(typed[2]);if(was)(was.disabled?$(was.id.replace("src-mb-","src-mv-").replace("src-cs-","src-ct-")):was)?.focus();
  if($("src-add")){
- $("src-add").onclick=()=>{const url=$("src-url").value.trim();if(!url){$("src-url").focus();return}const to=$("src-dir").value;if(!to){$("src-dir").focus();return}
+ // A social source is a platform and what to follow; the server builds its link, and
+ // nothing is gathered here: the agent reads it.
+ $("src-add").onclick=()=>{const social=srcKind==="social",url=$("src-url").value.trim(),q=$("src-q").value.trim(),plat=$("src-plat").value;
+  if(social?!q:!url){$(social?"src-q":"src-url").focus();return}const to=$("src-dir").value;if(!to){$("src-dir").focus();return}
   $("src-add").disabled=true;$("src-add").textContent="Adding…";
-  (async()=>{const j=await post("/sources",{op:"add",dir:to,url,label:$("src-label").value.trim(),category:$("src-cat").value.trim()});
-   if(j.ok){$("src-url").value=$("src-label").value=$("src-cat").value="";const g=await post("/sources",{op:"gather",dir:to,url}),r=g.results&&g.results[0];
+  (async()=>{const label=$("src-label").value.trim()||(social?`${PLAT[plat]}: ${q}`:""),category=$("src-cat").value.trim();
+   const j=await post("/sources",social?{op:"add",dir:to,platform:plat,query:q,label,category}:{op:"add",dir:to,url,label,category});
+   if(j.ok&&social){$("src-q").value=$("src-label").value=$("src-cat").value="";toast("Source added. Run /kaizen gather in your agent to read its posts.");load()}
+   else if(j.ok){$("src-url").value=$("src-label").value=$("src-cat").value="";const g=await post("/sources",{op:"gather",dir:to,url}),r=g.results&&g.results[0];
     toast(r?(r.ok?`Source added: ${r.note} in the icebox`:`Source added, but: ${r.note}`):"Source added");load()}
    else toast(j.error||"Could not add source");
    if(srcOpen())openSources()})()};
- $("src-url").onkeydown=$("src-label").onkeydown=$("src-cat").onkeydown=e=>{if(e.key==="Enter")$("src-add").click()};
+ $("src-url").onkeydown=$("src-q").onkeydown=$("src-label").onkeydown=$("src-cat").onkeydown=e=>{if(e.key==="Enter")$("src-add").click()};
  }
  if($("src-go"))$("src-go").onclick=()=>{$("src-go").disabled=true;$("src-go").innerHTML=ico("refresh")+" Gathering…";
-  act({op:"gather",dir:dir||undefined},j=>{const n=(j.results||[]).reduce((a,r)=>a+r.added,0),bad=(j.results||[]).filter(r=>!r.ok).length;
-   toast((n?`${n} new in the icebox`:"Nothing new")+(bad?`, ${bad} source${bad===1?"":"s"} could not be read`:""))})}}
+  act({op:"gather",dir:dir||undefined},j=>{const rs=j.results||[],soc=r=>list.some(s=>s.url===r.url&&s.social),n=rs.reduce((a,r)=>a+r.added,0),bad=rs.filter(r=>!r.ok&&!soc(r)).length,ag=rs.filter(soc).length;
+   toast((n?`${n} new in the icebox`:"Nothing new")+(bad?`, ${bad} source${bad===1?"":"s"} could not be read`:"")+(ag?`; ${ag} social for /kaizen gather`:""))})}}
 // With `report`, the toast carries a link to a prefilled GitHub bug form (/issue) and
 // stays long enough to click it.
 let tt;function toast(s,report){const t=$("toast");t.textContent=s;t.classList.toggle("rep",!!report);if(report){const a=document.createElement("a");a.href="/issue?"+new URLSearchParams(report);a.target="_blank";a.rel="noopener";a.textContent="Report";t.append(" ",a)}t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),report?8000:4000)}
