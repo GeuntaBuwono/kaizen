@@ -198,7 +198,9 @@ aside.wide{width:min(960px,100%)}#pbody .term{height:100%;min-height:320px;backg
 aside{position:fixed;top:0;right:0;bottom:0;z-index:11;width:520px;max-width:100%;background:var(--bg-2);border-left:1px solid var(--line);box-shadow:var(--shadow-2);display:flex;flex-direction:column;transform:translateX(100%);visibility:hidden;transition:transform .18s,visibility .18s}
 aside.open{transform:none;visibility:visible}
 /* Settings and the Icebox are pages: the same panel, docked into the app column, its content in a centred column */
-body.paged #board,body.paged .ftr,body.paged .hdr,body.paged .scrim{display:none}
+body.paged #board,body.paged .ftr,body.paged .scrim{display:none}
+/* The Icebox keeps the project bar, without the board's title and New idea; Settings has none */
+body.paged:not(.ice) .hdr,body.ice .hdr h1{display:none}body.ice #newtop{visibility:hidden}
 aside.docked{position:static;flex:1;min-height:0;width:auto;transform:none;visibility:visible;transition:none;box-shadow:none;border:0;background:none}
 aside.docked>header,aside.docked>.body{padding-inline:max(28px,calc((100% - 760px)/2))}
 aside.docked>header{border-bottom:0;padding-top:28px;padding-bottom:12px}
@@ -1107,7 +1109,7 @@ async function openSettings(){
 // ---- views: the board, or Settings and the Icebox as pages in the docked panel, each with its own address
 let view="board";
 const markView=v=>document.querySelectorAll(".rail a.it").forEach(a=>a.dataset.view===v?a.setAttribute("aria-current","page"):a.removeAttribute("aria-current"));
-function go(v,push){if(v==="icebox")v="sources";if(!["settings","sources"].includes(v))v="board";const was=view;view=v;markView(v);document.body.classList.toggle("paged",v!=="board");
+function go(v,push){if(v==="icebox")v="sources";if(!["settings","sources"].includes(v))v="board";const was=view;view=v;markView(v);document.body.classList.toggle("paged",v!=="board");document.body.classList.toggle("ice",v==="sources");
  if(push&&v!==was)history.pushState(null,"",v==="board"?location.pathname:"?view="+(v==="sources"?"icebox":v));
  const p=$("panel");
  if(v==="board"){if(was==="board")return;
@@ -1335,7 +1337,7 @@ async function pick(v){
  if(v==="__find"){toast("Searching…");const j=await post("/find",{});if(j.ok)toast(j.added?`Found ${j.added} new project${j.added===1?"":"s"}`:"No new projects found")}
  else if(v==="all"){all=true;keep()}
  else{const j=await post("/cd",{dir:v});if(j.ok){all=false;keep(v)}}
- load()}
+ await load();if(view==="sources")openSources()}
 // The all-projects filter: tick the projects to show; none ticked shows every one. Kept per browser.
 let shown=new Set((()=>{try{return JSON.parse(localStorage.getItem("kz-show"))||[]}catch(e){return[]}})());
 // Known projects, plus any folder a card comes from that is not one (the global inbox).
@@ -1394,7 +1396,7 @@ function listen(){const es=new EventSource("/events");es.onmessage=ev=>{if(ev.da
 // Back to the project picked last time, unless the URL says which view it wants. A
 // plain fetch: a project that is gone should fall back to all, not raise a toast.
 // A page named in the address shows from the first paint; it is filled once the board has loaded.
-const v0=(v=>v==="icebox"?"sources":v)(new URLSearchParams(location.search).get("view"));markView(["settings","sources"].includes(v0)?v0:"board");document.body.classList.toggle("paged",["settings","sources"].includes(v0));
+const v0=(v=>v==="icebox"?"sources":v)(new URLSearchParams(location.search).get("view"));markView(["settings","sources"].includes(v0)?v0:"board");document.body.classList.toggle("paged",["settings","sources"].includes(v0));document.body.classList.toggle("ice",v0==="sources");
 (async()=>{let d;try{d=localStorage.getItem("kz-proj")}catch(e){}
  if(d&&!urlAll)try{if((await fetch("/cd",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({dir:d})})).ok)all=false;else keep()}catch(e){}
  try{const f=JSON.parse(sessionStorage.getItem("kz-form"));if(f)[mode,modeKey]=f}catch(e){}
