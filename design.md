@@ -143,7 +143,8 @@ Terminal: whatever monospace the terminal has.
 
 ## 5. Semantics: status icons and stages
 
-Status is a 14 px circle icon, one per state, plus a word in the legend. Same set in the
+Status is a 14 px circle icon, one per state, plus a word in the legend. On the web the
+legend is the footer's status chips: icon, count and word, each one filtering the board. Same set in the
 TUI (as glyphs) and on the web (as SVG symbols `#s-<state>`).
 
 | State | Web icon | TUI glyph | Colour | Meaning |
