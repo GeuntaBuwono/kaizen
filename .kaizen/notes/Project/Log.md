@@ -29,3 +29,4 @@ updated: 2026-10-15
 - 2026-10-15 run 2026-10-15-full-width-pages — Web board (Settings and Icebox pages use the full width)
 - 2026-10-15 Sources and icebox (Add a source form moved to the top of the drawer, behind an Add button)
 - 2026-10-15 update — Web board: page switch clears the stale body (run 2026-10-15-menu-stale-page)
+- 2026-10-15 release — 1.31.2 published to npm, GitHub Packages, GitHub release (page switch fix)
