@@ -554,6 +554,12 @@ export async function web(repoDir: string, opts: Opts = {}) {
               if (typeof body.to !== "string" || !states(true).includes(body.to)) return bad("unknown state dir", 404);
               const why = moveSource(dir, body.to, link);
               if (why) return bad(why, why === "no such source" ? 404 : 409);
+            } else if (body.op === "agent") {
+              // Kaizen never reads a social source: open the agent on /kaizen gather, in
+              // a terminal, since there is no card to run it in.
+              if (dir === join(home, ".kaizen")) return bad("no project to gather in", 409);
+              const r = launchRun({ severity: null, where: null, text: "gather", raw: "gather" }, dir);
+              return json(r.ok ? { ok: true, agent: r.agent } : { ok: false, why: r.why, manual: r.manual, agent: r.agent }, r.ok ? 200 : 500);
             } else if (body.op === "gather") {
               if (link && !readSources(dir).some((s) => s.url === link)) return bad("no such source", 404);
               results = link ? [await gatherSource(dir, link)] : await gatherAll(dir);
