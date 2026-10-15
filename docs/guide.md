@@ -71,9 +71,11 @@ tells you what it concluded, so you correct a sentence instead of filling in a f
 | `/kaizen-run` | Carry on with an approved plan |
 | `/kaizen-backlog` | Everything noticed but not done, across all runs |
 | `/kaizen-abort` | Abandon the current run |
-| `/kaizen-gather` | Read the request sources kaizen cannot read by itself into Ideas |
+| `/kaizen-gather` | Read the request sources kaizen cannot read by itself into the icebox |
+| `/kaizen-discover` | An agent groups what is in the icebox, proposes ideas, and promotes the ones you pick |
 | `kaizen sources [add\|rm <link>]` | In a terminal: list, add or remove request sources |
-| `kaizen gather` | In a terminal: check every source now and add new requests to Ideas |
+| `kaizen gather` | In a terminal: check every source now and add new requests to the icebox |
+| `kaizen icebox [promote\|dismiss <ids>]` | In a terminal: list what waits in the icebox, promote it to Ideas, or dismiss it |
 | `/kaizen-config` | Show this project's settings and change them |
 | `/kaizen-init` | Set up the current project — optional, the first run does it |
 | `/kaizen-help` | The full card |
@@ -175,19 +177,28 @@ slower CPU path); a browser without a microphone API or WebAssembly shows no mic
 
 Requests that already live somewhere else — a team's Google Sheet, a Doc, a shared
 note — do not have to be retyped. The link icon beside the gear opens **Request
-sources**: paste a link, and kaizen reads it at once and adds every request it has not
-seen before to Ideas, each with a note saying where it came from and a *gathered* chip;
-the panel says what came back, or why the link could not be read. In a sheet, the header
+sources**: paste a link, give it a category if you like (*Feedback*, *Bugs*), and
+kaizen reads it at once and puts every request it has not seen before in the project's
+**icebox**, below the sources on the same page; the panel says what came back, or why
+the link could not be read. In a sheet, the header
 is looked for in the first five rows that hold anything, and a column headed `Request`,
 `Idea`, `Title`, `Task`, `PBI`, `Summary`, `Name`, `Detail`, `Details`, `Description`,
 `Deskripsi`, `Feedback`, `Issue`, `Permintaan` or `Judul` is the request; the other
 cells become its notes. Without such
 a header the request is one column for the whole sheet, the one holding the most text. A row whose `Status` column says `Done`,
 `Finish` or `Finished` is left out, and gathered later if its status changes. A doc or
-a plain-text link gives one idea per line.
+a plain-text link gives one request per line.
 
-Nothing starts on its own: gathered requests sit in Ideas until you press Run.
-Gathering twice adds nothing, and an idea you deleted, edited or rejected does not come
+The icebox keeps each request as the source wrote it, with the row's other cells, its
+source and the source's category, grouped by category. **Promote** makes it an idea in
+Ideas, with a note saying where it came from and a *gathered* chip; **Dismiss** sets it
+aside. Run `/kaizen discover` in your agent and it reads the icebox for you: it groups
+requests that ask for the same thing, drafts one idea per need, and promotes only the
+ones you pick (`kaizen icebox promote <ids>` underneath).
+
+Nothing starts on its own: requests wait in the icebox until promoted, and ideas wait
+in Ideas until you press Run. Gathering twice adds nothing, and a request you
+promoted or dismissed, or an idea you deleted, edited or rejected, does not come
 back. Rewording a row in the source makes it a new request. At most 50 arrive per
 gather; the rest come with the next one.
 
@@ -196,16 +207,16 @@ While the board is running it checks each source every 24 hours — `kaizen sett
 does it on demand. With the board stopped nothing is gathered. From a terminal:
 
 ```
-kaizen sources add <link> [label]     kaizen sources        kaizen sources rm <link>
-kaizen gather
+kaizen sources add <link> [label] [--category <c>]     kaizen sources     kaizen sources rm <link>
+kaizen gather       kaizen icebox       kaizen icebox promote <id>[,<id>] [--text-file <f>]       kaizen icebox dismiss <id>
 ```
 
 Kaizen fetches public `https` links only, with no login and no cookies: share a sheet
 or doc as "anyone with the link can view". A link that needs a sign-in, or a note app
 that only renders in a browser, says so in the panel; run `/kaizen gather` in your
 agent, which reads it with its own access and hands the requests over. Either way what
-a source says is treated as text for an idea, never as instructions. The links live in
-`<state.dir>/sources.json`.
+a source says is treated as text, never as instructions. The links live in
+`<state.dir>/sources.json`, the icebox in `<state.dir>/icebox.json`.
 
 ### Mouse
 

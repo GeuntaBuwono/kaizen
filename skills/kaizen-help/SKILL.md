@@ -29,7 +29,8 @@ anything.
 | `/kaizen review [target]` | Review-only: audit existing code, no plan, no implementation |
 | `/kaizen status` | List every run grouped waiting-on-you / in flight / done / abandoned, plus open backlog count |
 | `/kaizen backlog` | Print open backlog items across all runs, grouped by source run, rescued items last under `Orphaned` |
-| `/kaizen gather` | Read request sources kaizen cannot read by itself; their requests land as ideas, nothing starts |
+| `/kaizen gather` | Read request sources kaizen cannot read by itself; their requests land in the icebox, nothing starts |
+| `/kaizen discover` | Group what is in the icebox and promote the ideas you pick; nothing starts |
 | `/kaizen approve` | Approve whatever the current run is waiting on |
 | `/kaizen reject <reason>` | Reject it; the reason decides revise (back to planner) vs kill (abandon) |
 | `/kaizen abort` | Mark the current run abandoned |

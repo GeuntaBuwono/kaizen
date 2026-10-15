@@ -230,6 +230,7 @@ even in `auto`.
   memory.md                     # cross-run lessons, appended by the reviewer
   backlog.md                    # orphanage only: open items rescued before pruning
   sources.json                  # request sources: the links, and what was already gathered
+  icebox.json                   # gathered requests, waiting to be promoted to ideas or dismissed
   runs/
     2026-09-02-add-oauth/
       00-request.md             # the original request, verbatim

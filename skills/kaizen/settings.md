@@ -27,7 +27,7 @@ nearest first, so a change lands globally unless this project keeps its own conf
 | `ui.mouse` | `false`, `true` | Click to select, click again to act; while on, the terminal cannot select text |
 | `subagents.model` | `inherit`, `opus`, `sonnet`, `haiku` | Model the stage subagents run on (Claude Code only) |
 | `subagents.effort` | `inherit`, `low`, `medium`, `high` | Reasoning effort for the stage subagents (Claude Code only) |
-| `sources.every` | `off`, `1h`, `6h`, `24h` | How often the web board checks request sources for new ideas while it runs |
+| `sources.every` | `off`, `1h`, `6h`, `24h` | How often the web board checks request sources for new requests, into the icebox, while it runs |
 | `agent.default` | `auto`, `claude`, `codex`, `agy`, `opencode`, `gemini` | Coding agent to launch from dashboard backlog |
 
 Rules for writing the file:

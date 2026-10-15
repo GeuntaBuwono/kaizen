@@ -8,7 +8,7 @@ import {
   appendNote, saveAttachment, pidOnPort, readText, cmdExe, sysExe, powershellExe, runGit, cardsGit, readCommit, commitPush, notice, notifier, LOGO,
   reviewFindings, pickFindings, fixPrompt, approvalPrompt, canApproveAwaiting, nativePath, closeSessions, sweepSessions, issueUrl,
 } from "./state.ts";
-import { readSources, addSource, removeSource, moveSource, gatherSource, gatherAll, gatherDirs, due } from "./sources.ts";
+import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, gatherSource, gatherAll, gatherDirs, due } from "./sources.ts";
 import { listNotes, saveNote, renameNote, deleteNote, boardIndex, linksTo } from "./notes.ts";
 
 const PAGE = join(dirname(import.meta.dir), "web", "board.html");
@@ -134,7 +134,7 @@ export async function web(repoDir: string, opts: Opts = {}) {
   const fingerprint = () => {
     let sum = 0;
     for (const dir of states(true)) {
-      for (const f of ["inbox.md", "backlog.md", "archive.md", "sources.json"]) { try { sum += statSync(join(dir, f)).mtimeMs; } catch { /* absent */ } }
+      for (const f of ["inbox.md", "backlog.md", "archive.md", "sources.json", "icebox.json"]) { try { sum += statSync(join(dir, f)).mtimeMs; } catch { /* absent */ } }
       const runs = join(dir, "runs");
       if (!existsSync(runs)) continue;
       for (const id of readdirSync(runs)) { try { sum += statSync(join(runs, id, "state.json")).mtimeMs; } catch { /* absent */ } }
@@ -153,7 +153,7 @@ export async function web(repoDir: string, opts: Opts = {}) {
   }, 2000);
 
   // The schedule: once a minute, gather every request source that is due. It writes
-  // inbox.md and sources.json only, never a state.json, and starts nothing. All of
+  // icebox.json and sources.json only, never a state.json, and starts nothing. All of
   // it sits in a try: an uncaught error here would end the board.
   const every = async () => {
     const { listSettings } = await import("./settings.ts");
@@ -315,13 +315,16 @@ export async function web(repoDir: string, opts: Opts = {}) {
         // says which project it belongs to. Nothing is assumed from where the board started.
         const dir = url.searchParams.get("dir");
         if (dir && !states(true).includes(dir)) return bad("unknown state dir", 404);
-        const sources = [], failed = [];
+        const sources = [], icebox = [], failed = [];
         for (const d of dir ? [dir] : states(true)) {
           // The seen list is bookkeeping, not something the page shows.
           try { sources.push(...readSources(d).map(({ seen, ...s }) => ({ ...s, dir: d, project: label(d) }))); }
           catch { failed.push(label(d)); }
+          // Only what still waits for a decision; promoted and dismissed items are record.
+          try { icebox.push(...readIcebox(d).filter((s) => s.status === "new").map((s) => ({ ...s, dir: d, project: label(d) }))); }
+          catch { failed.push(label(d) + " (icebox)"); }
         }
-        return json({ sources, failed, every: await every() });
+        return json({ sources, icebox, failed, every: await every() });
       }
 
       // The Run form's choices for one project: installed tools and their models.
@@ -462,7 +465,8 @@ export async function web(repoDir: string, opts: Opts = {}) {
           return json({ ok: true });
         }
 
-        // Request sources. Gathering adds ideas and nothing else: no run starts here.
+        // Request sources. Gathering fills the icebox and nothing else: no idea is
+        // made and no run starts here.
         if (path === "/sources") {
           const link = String(body.url ?? "").trim();
           // A source belongs to the project the request names. The fallback above
@@ -478,8 +482,11 @@ export async function web(repoDir: string, opts: Opts = {}) {
             }
             if (!named) return bad(body.op === "add" ? "choose the project this source belongs to" : "say which project's source this is");
             if (body.op === "add") {
-              const why = addSource(dir, link, typeof body.label === "string" ? body.label : undefined);
+              const why = addSource(dir, link, typeof body.label === "string" ? body.label : undefined, typeof body.category === "string" ? body.category : undefined);
               if (why) return bad(why);
+            } else if (body.op === "category") {
+              const why = setCategory(dir, link, String(body.category ?? ""));
+              if (why) return bad(why, 404);
             } else if (body.op === "remove") {
               const why = removeSource(dir, link);
               if (why) return bad(why, 404);
@@ -494,6 +501,20 @@ export async function web(repoDir: string, opts: Opts = {}) {
             changed();
             return json({ ok: true, sources: readSources(dir).map(({ seen, ...s }) => s), results });
           } catch (e) { return bad((e as Error).message, 500); }
+        }
+
+        // The icebox: the only way gathered text becomes an idea, one explicit click
+        // (or agent call) at a time. An idea is made; no run starts.
+        if (path === "/icebox") {
+          if (typeof body.dir !== "string" || !states(true).includes(body.dir)) return bad("say which project's icebox this is");
+          const ids = Array.isArray(body.ids) ? body.ids.filter((i: unknown) => typeof i === "string") : [];
+          try {
+            const why = body.op === "promote" ? promote(body.dir, ids, typeof body.text === "string" ? body.text : undefined, typeof body.details === "string" ? body.details : undefined)
+              : body.op === "dismiss" ? dismiss(body.dir, ids) : "unknown op";
+            if (why) return bad(why, why === "no such item" ? 404 : why === "unknown op" ? 400 : 409);
+          } catch (e) { return bad((e as Error).message, 500); }
+          changed();
+          return json({ ok: true });
         }
 
         if (path === "/run") {

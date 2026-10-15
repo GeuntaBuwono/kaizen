@@ -238,7 +238,8 @@ Anthropic, OpenAI and Requesty are supported. Setup, privacy and settings are in
 | `/kaizen-approve` · `/kaizen-reject <reason>` | Answer whatever the run is waiting on |
 | `/kaizen-run` · `/kaizen-abort` | Carry on with an approved plan, or drop the run |
 | `/kaizen-status` · `/kaizen-backlog` | What's waiting, in flight, done, or left over |
-| `/kaizen-gather` | Pull new requests from your sources onto the board |
+| `/kaizen-gather` | Pull new requests from your sources into the icebox |
+| `/kaizen-discover` | Sort the icebox and promote the ideas you pick |
 | `/kaizen-config` | Change this project's settings |
 | `/kaizen-help` | The full card |
 

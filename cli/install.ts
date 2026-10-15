@@ -79,7 +79,7 @@ const found = (r: string) =>
 // Request sources. Dispatched on the first word alone and ahead of every flag
 // check below, so a label or a link that happens to read `web` or `uninstall` is
 // only ever a label.
-if (Bun.argv[2] === "sources" || Bun.argv[2] === "gather") {
+if (Bun.argv[2] === "sources" || Bun.argv[2] === "gather" || Bun.argv[2] === "icebox") {
   const { locate, label } = await import("./state.ts");
   const src = await import("./sources.ts");
   const state = locate() ?? join(home, ".kaizen");
@@ -87,8 +87,27 @@ if (Bun.argv[2] === "sources" || Bun.argv[2] === "gather") {
   const where = c.dim(`project  ${label(state)}`);
   const [, , cmd, op, url = "", ...rest] = Bun.argv;
   const line = (r: { url: string; ok: boolean; note: string }) => `  ${r.ok ? c.green("ok  ") : "fail"}  ${r.url}  ${c.dim(r.note)}`;
+  const waiting = c.dim("  new requests wait in the icebox — kaizen icebox");
   try {
-    if (cmd === "gather" && op === "--stdin") {
+    if (cmd === "icebox" && (op === "promote" || op === "dismiss")) {
+      // Ids only on the command line. The idea's text, which an agent may have written
+      // from outside text, comes from a file and never through a shell.
+      const ids = url.split(",").map((i) => i.trim()).filter(Boolean);
+      const at = rest.indexOf("--text-file");
+      if (at >= 0 && !rest[at + 1]) { console.log("\n  --text-file needs a path\n"); process.exit(1); }
+      const text = at >= 0 ? readFileSync(rest[at + 1]!, "utf8") : undefined;
+      const why = op === "promote" ? src.promote(state, ids, text) : src.dismiss(state, ids);
+      if (why) { console.log(`\n  ${why}\n`); process.exit(1); }
+      console.log(`\n  ${op === "promote" ? "promoted to Ideas" : "dismissed"}: ${ids.join(", ")}\n  ${where}\n`);
+    } else if (cmd === "icebox") {
+      const all = src.readIcebox(state);
+      const fresh = all.filter((s) => s.status === "new");
+      const names = new Map(src.readSources(state).map((s) => [s.url, s.label || s.url]));
+      console.log(`\n  ${where}  ${c.dim(`${fresh.length} waiting, ${all.length - fresh.length} promoted or dismissed`)}`);
+      console.log(fresh.length
+        ? "\n" + fresh.map((s) => `  ${s.id}  [${s.category || "Uncategorised"}]  ${s.text}  ${c.dim(`(${names.get(s.source) ?? s.source})`)}${s.notes ? "\n            " + c.dim(s.notes.replace(/\n/g, " · ")) : ""}`).join("\n") + "\n"
+        : `\n  the icebox is empty ${c.dim("— kaizen gather")}\n`);
+    } else if (cmd === "gather" && op === "--stdin") {
       // What an agent read from a link kaizen could not: one request per line, an
       // optional tab, then notes. Only for a link already listed.
       if (!src.readSources(state).some((s) => s.url === url)) { console.log(`
@@ -98,20 +117,22 @@ if (Bun.argv[2] === "sources" || Bun.argv[2] === "gather") {
         const [text = "", ...notes] = l.split("\t");
         return { text, notes: notes.join(" ") };
       });
-      console.log(line(src.record(state, url, src.ingest(state, url, items))));
+      console.log(line(src.record(state, url, src.ingest(state, url, items))) + "\n" + waiting);
     } else if (cmd === "gather") {
       const results = await src.gatherAll(state);
-      console.log(results.length ? results.map(line).join("\n") : `\n  no sources yet ${c.dim("— kaizen sources add <link>")}\n`);
+      console.log(results.length ? results.map(line).join("\n") + "\n" + waiting : `\n  no sources yet ${c.dim("— kaizen sources add <link>")}\n`);
       if (results.some((r) => !r.ok)) process.exit(1);
     } else if (op === "add" || op === "rm") {
-      const why = op === "add" ? src.addSource(state, url, rest.join(" ")) : src.removeSource(state, url);
+      const at = rest.indexOf("--category");
+      const category = at >= 0 ? rest.splice(at, 2)[1] : undefined;
+      const why = op === "add" ? src.addSource(state, url, rest.join(" "), category) : src.removeSource(state, url);
       if (why) { console.log(`\n  ${why}\n`); process.exit(1); }
       console.log(`\n  ${op === "add" ? "added" : "removed"} ${url}\n  ${where}\n`);
     } else {
       const list = src.readSources(state);
       console.log(`\n  ${where}`);
       console.log(list.length
-        ? "\n" + list.map((s) => `  ${s.url}${s.label ? `  ${s.label}` : ""}\n    ${c.dim(s.last ? `${s.last.at.slice(0, 16).replace("T", " ")}  ${s.last.note}` : "not gathered yet")}`).join("\n") + "\n"
+        ? "\n" + list.map((s) => `  ${s.url}${s.label ? `  ${s.label}` : ""}${s.category ? c.dim(`  [${s.category}]`) : ""}\n    ${c.dim(s.last ? `${s.last.at.slice(0, 16).replace("T", " ")}  ${s.last.note}` : "not gathered yet")}`).join("\n") + "\n"
         : `\n  no sources yet ${c.dim("— kaizen sources add <link>")}\n`);
     }
   } catch (e) { console.log(`\n  ${(e as Error).message}\n`); process.exit(1); }
