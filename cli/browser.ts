@@ -251,27 +251,29 @@ export function postLink(notes = ""): string | null {
   return null;
 }
 
-// Where each platform takes a reply on a post's own page: an optional control that
-// opens the composer, the box, and the button that sends it. Each is a selector, and
-// for buttons known only by their words, a pattern for those words. Matched in the
-// dialog the composer opened, when there is one.
+// Where each platform takes a reply on a post's own page: the box, and the button that
+// sends it. Each is a selector, and for buttons known only by their words, a pattern
+// for those words.
 type Step = [css: string, words?: string];
-const REPLY: Record<string, { open?: Step; box: Step; send: Step }> = {
+const REPLY: Record<string, { box: Step; send: Step }> = {
   x: { box: ['[data-testid="tweetTextarea_0"]'], send: ['[data-testid="tweetButtonInline"],[data-testid="tweetButton"]'] },
-  threads: { open: ['[role="button"]:has(svg[aria-label="Reply"]),svg[aria-label="Reply"]'], box: ['[contenteditable="true"]'], send: ['[role="button"],button', "^Post$"] },
+  threads: { box: ['[contenteditable="true"]'], send: ['[role="button"]:has(svg[aria-label="Reply"])'] },
   instagram: { box: ['textarea[aria-label*="comment" i],textarea[placeholder*="comment" i]'], send: ['[role="button"],button', "^Post$"] },
   tiktok: { box: ['[data-e2e="comment-input"] [contenteditable="true"],[data-e2e="comment-input"] textarea'], send: ['[data-e2e="comment-post"]'] },
 };
 
-// Runs in the page: the first shown element a step names, looked for in the last open
-// dialog first (where a composer opens), then the whole page. Clicks it, or focuses it
-// and marks it as the box. False when there is none.
+// Runs in the page: the first shown element a step names, looked for nearest the
+// marked box first (its own composer), then in the last open dialog, then the whole
+// page. Clicks it, or focuses it and marks it as the box. False when there is none.
 const FIND = (s: Step, act: "click" | "focus") => `(() => {
   const words = ${JSON.stringify(s[1] ?? "")};
   const fits = (e) => e.getClientRects().length && e.getAttribute("aria-disabled") !== "true" && !e.disabled
     && (!words || new RegExp(words, "i").test((e.innerText || e.getAttribute("aria-label") || "").trim()));
+  const pick = (r) => [...r.querySelectorAll(${JSON.stringify(s[0])})].find(fits);
+  let near = document.querySelector("[data-kaizen-box]");
+  while (near && !pick(near)) near = near.parentElement;
   const dialog = [...document.querySelectorAll('[role="dialog"]')].filter((d) => d.getClientRects().length).at(-1);
-  const el = [dialog, document].filter(Boolean).map((r) => [...r.querySelectorAll(${JSON.stringify(s[0])})].find(fits)).find(Boolean);
+  const el = [near, dialog, document].filter(Boolean).map(pick).find(Boolean);
   if (!el) return false;
   ${act === "click" ? "(el.closest('[role=\"button\"],button') || el).click();" : "el.focus(); document.querySelectorAll('[data-kaizen-box]').forEach((e) => e.removeAttribute('data-kaizen-box')); el.setAttribute('data-kaizen-box', '');"}
   return true;
@@ -296,7 +298,6 @@ export async function replyOn(page: Page, link: string, platform: string, text: 
   await page.go(link);
   if (!(await here()) || (await page.js<boolean>(WALL))) return { ok: false, note: signInNote(platform) };
   if (await page.js<boolean>(CHECK)) return { ok: false, note: checkNote(platform) };
-  if (how.open && (await page.js<boolean>(FIND(how.open, "click")))) await Bun.sleep(2000);
   if (!(await page.js<boolean>(FIND(how.box, "focus"))))
     return { ok: false, note: (await page.js<boolean>(OFFERS)) ? signInNote(platform) : `Could not find the reply box on ${name}. Nothing was posted.` };
   await page.call("Input.insertText", { text });

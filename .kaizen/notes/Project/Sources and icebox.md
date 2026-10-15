@@ -31,7 +31,7 @@ Shared links (sheets, docs, social searches) kaizen reads for requests; each req
 - The Sources panel rebuilds on every action; controls need an id and an explicit step (`.kaizen/memory.md`).
 
 - Reply styles: only `promo` and `helpful` send the README to ChatGPT, so `casual`/`fun` cannot name the project. The style from the client is checked with `Object.hasOwn` (a plain lookup lets `constructor` through). The board keeps the style per project (`kz-reply-style:<dir>`) and shows the picker and Regenerate only when ChatGPT is connected.
-- Replying posts publicly and cannot be undone. `/reply` `draft` writes nothing; only `send` with the user's text posts, and pressing the platform's send button stamps `replied` on the item even when the page never confirmed, so a retry cannot double post. `REPLY` selectors in `cli/browser.ts` are per platform and break on a redesign; the fixture test only covers the X shape.
+- Replying posts publicly and cannot be undone. `/reply` `draft` writes nothing; only `send` with the user's text posts, and pressing the platform's send button stamps `replied` on the item even when the page never confirmed, so a retry cannot double post. `REPLY` selectors in `cli/browser.ts` are per platform and break on a redesign; the fixture test only covers the X shape. Threads replies in the inline composer under the post: its send is an icon button (`svg[aria-label="Reply"]`) that appears only once text is typed; there is no "Post" button unless the composer is expanded (issue #6). `FIND` looks for the send button nearest the box first (walking up from `[data-kaizen-box]`), then the last dialog, then the page.
 
 ## Notes
 <!-- yours: /kaizen docs never rewrites this section -->
