@@ -1149,6 +1149,8 @@ const SRC="Icebox";
 // whether a bulk action is still posting.
 // The category filter, and whether the add form takes a link or a social account/tag. The
 // project filter is the board's own `shown`, so the board and the icebox narrow alike.
+// The reply being written to a gathered post: its item, the text, and whether it is out.
+let iceReply=null;
 let iceForm=null,iceCur=null,iceSrc="",iceCat="",srcKind="link",srcShow=null,iceBusy=false,iceNav=null;const iceSel=new Set();
 const PLAT={x:"X",tiktok:"TikTok",instagram:"Instagram",threads:"Threads"};
 const srcOpen=()=>$("panel").classList.contains("open")&&$("ptitle").textContent===SRC;
@@ -1226,9 +1228,15 @@ async function openSources(){
  // The open item's form: a clean title for the idea's card and the person's own details;
  // what was gathered is added to the idea's notes by the server.
  const form=it=>`<div class="ice-form"><label for="ice-title" class="hint" style="margin:0">Idea title</label><input class="sel" id="ice-title" data-k="${esc(iceKey(it))}" maxlength="200" value="${esc(it.text)}" aria-label="Idea title"><label for="ice-details" class="hint" style="margin:0">Details (optional)</label><textarea class="sel" id="ice-details" rows="3" placeholder="In your own words: what is needed, for whom, why" aria-label="Details (optional)"></textarea><div class="ice-form-acts"><span class="hint">What was gathered is added to the idea's notes.</span><button class="btn ghost sm" id="ice-cancel">Cancel</button><button class="btn pri sm" id="ice-ok">Promote</button></div></div>`;
+ // A gathered post can be answered: Reply drafts, the box is the approval, Send reply posts that text.
+ const replyBox=it=>{if(!it.post)return"";if(it.replied)return`<span class="hint" style="margin:0">You replied to this post ${ago(it.replied)}.</span>`;
+  const r=iceReply&&iceReply.k===iceKey(it)?iceReply:null;
+  if(!r)return`<div class="ice-form-acts"><span class="hint">Answer this post from your signed-in kaizen browser. You see the reply before it goes out.</span><button class="btn sm" id="ice-rp">Reply</button></div>`;
+  if(r.wait)return`<div class="ice-form-acts"><span class="hint">Writing a draft…</span></div>`;
+  return`<div class="ice-form"><label for="ice-reply" class="hint" style="margin:0">Your reply${r.note?` · ${esc(r.note)}`:""}</label><textarea class="sel" id="ice-reply" rows="3" maxlength="2000" aria-label="Your reply"${r.busy?" disabled":""}>${esc(r.text)}</textarea><div class="ice-form-acts"><span class="hint" id="ice-rn">${r.text.length} characters · nothing is posted until you press Send reply</span><button class="btn ghost sm" id="ice-rc"${r.busy?" disabled":""}>Cancel</button><button class="btn pri sm" id="ice-rs"${r.busy||!r.text.trim()?" disabled":""}>${r.busy?"Sending…":"Send reply"}</button></div></div>`};
  const row=i=>{const it=ice[i],k=iceKey(it),open=iceForm===k;
-  return `<div class="ice-row${iceCur===k?" cur":""}${iceSel.has(k)?" sel":""}" data-i="${i}" data-k="${esc(k)}"><input type="checkbox" id="ice-ck-${i}" data-ck="${i}"${iceSel.has(k)?" checked":""} aria-label="Select: ${esc(it.text)}"><button class="ice-t" id="ice-o-${i}" data-o="${i}" aria-expanded="${open}" title="${esc(it.text)}">${esc(it.text)}</button><span class="ice-src" title="${esc(srcName(it))}">${fav(it.source,"link",list.find(x=>x.dir===it.dir&&x.url===it.source)?.social)}<span class="nm">${esc(many?it.project||srcName(it):srcName(it))}</span></span><span class="ice-age">${ago(it.at)}</span><span class="ice-ra"><button class="btn ghost sm" id="ice-pr-${i}" data-pr="${i}" title="Promote to Ideas as gathered (p)" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")}</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" title="Dismiss (d)" aria-label="Dismiss: ${esc(it.text)}">${ico("x")}</button></span></div>`
-   +(open?`<div class="ice-open">${it.notes?`<div class="ice-notes">${esc(it.notes)}</div>`:""}<span class="hint" style="margin:0">From ${esc(srcName(it))} · ${ago(it.at)}</span>${form(it)}</div>`:"")};
+  return `<div class="ice-row${iceCur===k?" cur":""}${iceSel.has(k)?" sel":""}" data-i="${i}" data-k="${esc(k)}"><input type="checkbox" id="ice-ck-${i}" data-ck="${i}"${iceSel.has(k)?" checked":""} aria-label="Select: ${esc(it.text)}"><button class="ice-t" id="ice-o-${i}" data-o="${i}" aria-expanded="${open}" title="${esc(it.text)}">${esc(it.text)}</button><span class="ice-src" title="${esc(srcName(it))}">${fav(it.source,"link",list.find(x=>x.dir===it.dir&&x.url===it.source)?.social)}<span class="nm">${esc(many?it.project||srcName(it):srcName(it))}</span></span>${it.replied?`<span class="chip" title="Replied ${esc(ago(it.replied))}">replied</span>`:""}<span class="ice-age">${ago(it.at)}</span><span class="ice-ra"><button class="btn ghost sm" id="ice-pr-${i}" data-pr="${i}" title="Promote to Ideas as gathered (p)" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")}</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" title="Dismiss (d)" aria-label="Dismiss: ${esc(it.text)}">${ico("x")}</button></span></div>`
+   +(open?`<div class="ice-open">${it.notes?`<div class="ice-notes">${esc(it.notes)}</div>`:""}<span class="hint" style="margin:0">From ${esc(srcName(it))} · ${ago(it.at)}${it.post?` · <a href="${esc(it.post)}" target="_blank" rel="noopener">open post</a>`:""}</span>${replyBox(it)}${form(it)}</div>`:"")};
  const inbox=ice.length&&!order.length?`<div class="ice-zero"><h4>Nothing matches</h4><p>${ice.length} waiting outside these filters.</p><p style="margin-top:10px"><button class="btn sm" id="ice-unf">Clear filters</button></p></div>`:ice.length?`<div class="ice-list">${[...groups].map(([g,ix])=>`<div class="ice-cat">${esc(g)}<i>${ix.length}</i></div>${ix.map(row).join("")}`).join("")}</div>`
   :`<div class="ice-zero"><h4>Inbox zero</h4><p>Nothing waiting. Gather all checks your sources for new requests; /kaizen discover in your agent sorts what comes in.</p></div>`;
  // The sources, in the right-hand drawer: shut until asked for, open by itself while there
@@ -1292,6 +1300,17 @@ async function openSources(){
  $("pbody").querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{b.disabled=true;iceAct("promote",ice[+b.dataset.pr],"Promoted to Ideas")});
  $("pbody").querySelectorAll("[data-ds]").forEach(b=>b.onclick=()=>{b.disabled=true;iceAct("dismiss",ice[+b.dataset.ds],"Dismissed")});
  const open1=ice.find(it=>iceKey(it)===iceForm);
+ if($("ice-rp"))$("ice-rp").onclick=async()=>{const it=open1,k=iceKey(it);iceReply={k,text:"",wait:true};openSources();
+  const j=await post("/reply",{op:"draft",dir:it.dir,id:it.id});if(!iceReply||iceReply.k!==k)return;
+  iceReply={k,text:j.text||"",note:j.ok?j.note||"":"",wait:false};openSources().then(()=>$("ice-reply")?.focus())};
+ if($("ice-reply")){const ta=$("ice-reply");ta.oninput=()=>{iceReply.text=ta.value;$("ice-rn").textContent=`${ta.value.length} characters · nothing is posted until you press Send reply`;$("ice-rs").disabled=!ta.value.trim()};
+  ta.onkeydown=e=>{if(e.key==="Escape"){e.stopPropagation();$("ice-rc").click()}};
+  $("ice-rc").onclick=()=>{iceReply=null;openSources()};
+  $("ice-rs").onclick=async()=>{const it=open1,r=iceReply;r.busy=true;openSources();
+   const j=await post("/reply",{op:"send",dir:it.dir,id:it.id,text:r.text});
+   if(j.ok){iceReply=null;toast("Reply posted")}else if(j.sent)iceReply=null;else r.busy=false;
+   load();if(srcOpen())openSources()}}
+
  if($("ice-ok")){
   const ok=()=>{const title=$("ice-title").value.trim();if(!title){$("ice-title").focus();return}$("ice-ok").disabled=true;iceAct("promote",open1,"Promoted to Ideas",{text:title,details:$("ice-details").value})};
   $("ice-ok").onclick=ok;

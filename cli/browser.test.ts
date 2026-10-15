@@ -5,7 +5,7 @@ import { test, expect, afterAll } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { caption, authorOf, noteOf, findBrowser } from "./browser.ts";
+import { caption, authorOf, noteOf, findBrowser, postLink } from "./browser.ts";
 
 const repo = join(import.meta.dir, "..");
 const home = mkdtempSync(join(tmpdir(), "kaizen-br-"));
@@ -88,3 +88,41 @@ test.skipIf(!findBrowser())("reads posts, stays on the source's host, reports wa
   } finally { site.stop(true); other.stop(true); }
 }, 180_000);
 
+
+test("a gathered item's post is the post link in its notes, never a search, an account or another site", () => {
+  expect(postLink("@ana · https://x.com/ana/status/123 · 2026-10-14")).toBe("https://x.com/ana/status/123");
+  expect(postLink("@ina · https://www.instagram.com/p/AbC_1/ · May 2")).toBe("https://www.instagram.com/p/AbC_1/");
+  expect(postLink("https://www.threads.com/search?q=kaizen")).toBeNull();
+  expect(postLink("@ana · https://x.com/ana")).toBeNull();
+  expect(postLink("https://evil.example/ana/status/123")).toBeNull();
+  expect(postLink(undefined)).toBeNull();
+});
+
+test.skipIf(!findBrowser())("a reply types the approved text into the post's box and sends it; off the post's host nothing is typed", async () => {
+  const got: string[] = [], away: string[] = [];
+  const other = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: (r) => { away.push(new URL(r.url).pathname); return new Response(`<div data-testid="tweetTextarea_0" contenteditable="true"></div>`, { headers: { "content-type": "text/html" } }); } });
+  const page = (b: string) => new Response(`<!doctype html><body>${b}</body>`, { headers: { "content-type": "text/html" } });
+  const site = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: async (r) => {
+    const p = new URL(r.url).pathname;
+    if (p === "/got") { got.push(await r.text()); return new Response("ok"); }
+    if (p === "/ana/status/1") return page(`<article>Is there a tool that plans before it codes?</article>
+      <div data-testid="tweetTextarea_0" contenteditable="true" role="textbox"></div>
+      <button data-testid="tweetButtonInline" onclick="const b=document.querySelector('[data-testid=tweetTextarea_0]');fetch('/got',{method:'POST',body:b.innerText}).then(()=>{b.innerText=''})">Reply</button>`);
+    if (p === "/ana/status/2") return page(`<div>no box here</div>`);
+    if (p === "/ana/status/3") return page(`<div data-testid="tweetTextarea_0" contenteditable="true"></div><button data-testid="tweetButtonInline">Reply</button>`);
+    if (p === "/ana/status/4") return Response.redirect(`http://127.0.0.1:${other.port}/ana/status/4`, 302);
+    return page("");
+  } });
+  try {
+    const base = `http://127.0.0.1:${site.port}`;
+    const out = await run(`
+      const send = (n) => br.browse((page) => br.replyOn(page, ${JSON.stringify(base)} + "/ana/status/" + n, "x", "Same here, kaizen plans first 🙂 Kalau mau coba, enak kok"));
+      return { sent: await send(1), nobox: await send(2), stuck: await send(3), moved: await send(4) };`);
+    expect(out.sent).toEqual({ ok: true });
+    expect(got).toEqual(["Same here, kaizen plans first 🙂 Kalau mau coba, enak kok"]);
+    expect(out.nobox).toEqual({ ok: false, note: "Could not find the reply box on X. Nothing was posted." });
+    expect(out.stuck).toEqual({ ok: false, sent: true, note: "X did not confirm the reply. Check the post before replying again." });
+    expect(out.moved).toEqual({ ok: false, note: "Sign in once: kaizen browser login x" });
+    expect(away.filter((p) => p !== "/favicon.ico")).toEqual(["/ana/status/4"]);
+  } finally { site.stop(true); other.stop(true); }
+}, 180_000);

@@ -134,7 +134,7 @@ function clean(raw: string, extra = ""): { text: string; lines: string[] } | nul
 // The icebox: everything gathered, held per project until a person or an agent
 // promotes it to an idea or dismisses it. Promoted and dismissed items stay, so the
 // same request never comes back.
-export type Signal = { id: string; text: string; notes?: string; source: string; category?: string; at: string; status: "new" | "promoted" | "dismissed"; idea?: string };
+export type Signal = { id: string; text: string; notes?: string; source: string; category?: string; at: string; status: "new" | "promoted" | "dismissed"; idea?: string; replied?: string };
 
 const iceFile = (state: string) => join(state, "icebox.json");
 
@@ -233,6 +233,17 @@ export function dismiss(state: string, ids: string[]): string | null {
   if (!ids.length) return "no items named";
   if (picked.some((s) => !s)) return "no such item";
   for (const s of picked) if (s!.status === "new") s!.status = "dismissed";
+  writeIcebox(state, ice);
+  return null;
+}
+
+// A reply went out under this item's post: stamped once, so it is never sent twice.
+export function markReplied(state: string, id: string): string | null {
+  const ice = readIcebox(state);
+  const s = ice.find((x) => x.id === id);
+  if (!s) return "no such item";
+  if (s.replied) return "already replied";
+  s.replied = new Date().toISOString();
   writeIcebox(state, ice);
   return null;
 }

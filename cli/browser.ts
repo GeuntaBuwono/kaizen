@@ -241,3 +241,73 @@ export async function readPage(page: Page, url: string, platform: string, max = 
   if (!posts.length && (await page.js<boolean>(OFFERS))) return { ok: false, note: signInNote(platform) };
   return { ok: true, posts };
 }
+
+// The one post a gathered item came from: the link in its notes (`@author · link · date`)
+// that is a post on a social platform. A search or account link is not one.
+export function postLink(notes = ""): string | null {
+  for (const l of notes.match(/https?:\/\/\S+/g) ?? []) {
+    try { const p = socialOf(l); if (p && POST[p]!.test(new URL(l).pathname.replace(/\/$/, ""))) return l; } catch { /* not a URL */ }
+  }
+  return null;
+}
+
+// Where each platform takes a reply on a post's own page: an optional control that
+// opens the composer, the box, and the button that sends it. Each is a selector, and
+// for buttons known only by their words, a pattern for those words. Matched in the
+// dialog the composer opened, when there is one.
+type Step = [css: string, words?: string];
+const REPLY: Record<string, { open?: Step; box: Step; send: Step }> = {
+  x: { box: ['[data-testid="tweetTextarea_0"]'], send: ['[data-testid="tweetButtonInline"],[data-testid="tweetButton"]'] },
+  threads: { open: ['[role="button"]:has(svg[aria-label="Reply"]),svg[aria-label="Reply"]'], box: ['[contenteditable="true"]'], send: ['[role="button"],button', "^Post$"] },
+  instagram: { box: ['textarea[aria-label*="comment" i],textarea[placeholder*="comment" i]'], send: ['[role="button"],button', "^Post$"] },
+  tiktok: { box: ['[data-e2e="comment-input"] [contenteditable="true"],[data-e2e="comment-input"] textarea'], send: ['[data-e2e="comment-post"]'] },
+};
+
+// Runs in the page: the first shown element a step names, looked for in the last open
+// dialog first (where a composer opens), then the whole page. Clicks it, or focuses it
+// and marks it as the box. False when there is none.
+const FIND = (s: Step, act: "click" | "focus") => `(() => {
+  const words = ${JSON.stringify(s[1] ?? "")};
+  const fits = (e) => e.getClientRects().length && e.getAttribute("aria-disabled") !== "true" && !e.disabled
+    && (!words || new RegExp(words, "i").test((e.innerText || e.getAttribute("aria-label") || "").trim()));
+  const dialog = [...document.querySelectorAll('[role="dialog"]')].filter((d) => d.getClientRects().length).at(-1);
+  const el = [dialog, document].filter(Boolean).map((r) => [...r.querySelectorAll(${JSON.stringify(s[0])})].find(fits)).find(Boolean);
+  if (!el) return false;
+  ${act === "click" ? "(el.closest('[role=\"button\"],button') || el).click();" : "el.focus(); document.querySelectorAll('[data-kaizen-box]').forEach((e) => e.removeAttribute('data-kaizen-box')); el.setAttribute('data-kaizen-box', '');"}
+  return true;
+})()`;
+const BOX = `(() => { const b = document.querySelector("[data-kaizen-box]"); return b && b.isConnected && b.getClientRects().length ? (b.value ?? b.innerText ?? "") : null; })()`;
+
+export type Sent = { ok: true } | { ok: false; note: string; sent?: boolean };
+
+// Posts `text` as a reply on one post, in the kaizen profile. `sent` says the send
+// button was pressed, whether or not the page then showed the reply went out.
+export async function sendReply(link: string, text: string): Promise<Sent> {
+  const platform = socialOf(link);
+  if (!platform || !REPLY[platform]) return { ok: false, note: "Not a social post." };
+  return browse<Sent>((page) => replyOn(page, link, platform, text));
+}
+
+// The reply itself, on an open page. Only the post's own link is opened, and nothing
+// is typed anywhere once the page has left the post's host.
+export async function replyOn(page: Page, link: string, platform: string, text: string): Promise<Sent> {
+  const how = REPLY[platform]!, host = new URL(link).host, name = PLATFORMS[platform] ?? platform;
+  const here = async () => { try { return new URL(await page.js<string>("location.href")).host === host; } catch { return false; } };
+  await page.go(link);
+  if (!(await here()) || (await page.js<boolean>(WALL))) return { ok: false, note: signInNote(platform) };
+  if (await page.js<boolean>(CHECK)) return { ok: false, note: checkNote(platform) };
+  if (how.open && (await page.js<boolean>(FIND(how.open, "click")))) await Bun.sleep(2000);
+  if (!(await page.js<boolean>(FIND(how.box, "focus"))))
+    return { ok: false, note: (await page.js<boolean>(OFFERS)) ? signInNote(platform) : `Could not find the reply box on ${name}. Nothing was posted.` };
+  await page.call("Input.insertText", { text });
+  await Bun.sleep(800);
+  if (!(await here())) return { ok: false, note: `The page left ${name}. Nothing was posted.` };
+  if (!(await page.js<boolean>(FIND(how.send, "click")))) return { ok: false, note: `Could not find ${name}'s send button. Nothing was posted.` };
+  // Sent once the box is gone or emptied; still holding the text means it did not go.
+  for (let i = 0; i < 20; i++) {
+    await Bun.sleep(500);
+    const left = await page.js<string | null>(BOX);
+    if (left === null || !left.trim()) return { ok: true };
+  }
+  return { ok: false, sent: true, note: `${name} did not confirm the reply. Check the post before replying again.` };
+}

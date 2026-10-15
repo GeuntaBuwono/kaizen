@@ -10,8 +10,9 @@ import {
   launchMode, readSessions, ownerOf, resumePrompt,
 } from "./state.ts";
 import { attachPty, writePty, resizePty, ptyState, ptyKeys, adoptLoginEnv } from "./pty.ts";
-import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, gatherSource, gatherAll, gatherDirs, due, socialUrl, socialOf } from "./sources.ts";
+import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, markReplied, gatherSource, gatherAll, gatherDirs, due, socialUrl, socialOf } from "./sources.ts";
 import * as chatgpt from "./chatgpt.ts";
+import { postLink, sendReply } from "./browser.ts";
 import { listNotes, saveNote, renameNote, deleteNote, boardIndex, linksTo } from "./notes.ts";
 
 const PAGE = join(dirname(import.meta.dir), "web", "board.html");
@@ -23,6 +24,8 @@ const NOTES_JS = join(dirname(import.meta.dir), "web", "notebook.js");
 const TERM_JS = join(dirname(import.meta.dir), "web", "term.js");
 const TERM_CSS = join(dirname(import.meta.dir), "web", "term.css");
 const DEFAULT_PORT = 7420;
+// Gathered posts a reply is going out to right now: one send per item at a time.
+const replying = new Set<string>();
 type PtySock = { key: string; detach: (() => void) | null };
 // Read once at start: a board keeps the code it started with, so this is what it
 // runs, not what is installed now. `/` sends it; `current()` compares the two.
@@ -388,7 +391,7 @@ export async function web(repoDir: string, opts: Opts = {}) {
           try { sources.push(...readSources(d).map(({ seen, ...s }) => ({ ...s, social: socialOf(s.url), dir: d, project: label(d) }))); }
           catch { failed.push(label(d)); }
           // Only what still waits for a decision; promoted and dismissed items are record.
-          try { icebox.push(...readIcebox(d).filter((s) => s.status === "new").map((s) => ({ ...s, dir: d, project: label(d) }))); }
+          try { icebox.push(...readIcebox(d).filter((s) => s.status === "new").map((s) => ({ ...s, post: postLink(s.notes), dir: d, project: label(d) }))); }
           catch { failed.push(label(d) + " (icebox)"); }
         }
         return json({ sources, icebox, failed, every: await every(), gatherer: { use: await setting("sources.agent"), ...chatgpt.status() } });
@@ -630,6 +633,35 @@ export async function web(repoDir: string, opts: Opts = {}) {
           } catch (e) { return bad((e as Error).message, 500); }
           changed();
           return json({ ok: true });
+        }
+
+        // A reply to a gathered post. `draft` only writes text for the user to read; only
+        // `send`, carrying the text they approved, posts anything, once per item.
+        if (path === "/reply") {
+          if (typeof body.dir !== "string" || !states(true).includes(body.dir)) return bad("say which project's icebox this is");
+          const it = readIcebox(body.dir).find((s) => s.id === body.id);
+          if (!it) return bad("no such item", 404);
+          const link = postLink(it.notes);
+          if (!link) return bad("this item is not a social post");
+          if (body.op === "draft") {
+            if (!chatgpt.status().connected) return json({ ok: true, text: "", note: "Connect ChatGPT to get a draft, or write the reply yourself." });
+            const d = await chatgpt.draftReply(body.dir, it.text, await setting("sources.model"), (await setting("sources.effort")) || "low");
+            return json(d.ok ? d : { ok: true, text: "", note: d.note });
+          }
+          if (body.op !== "send") return bad("unknown op");
+          const text = typeof body.text === "string" ? body.text.trim() : "";
+          if (!text) return bad("write the reply first");
+          if (text.length > 2000) return bad("the reply is too long");
+          if (it.replied) return bad("already replied", 409);
+          const key = body.dir + " " + it.id;
+          if (replying.has(key)) return bad("already sending", 409);
+          replying.add(key);
+          try {
+            const r = await sendReply(link, text);
+            // Pressed send counts as sent, confirmed or not: a second press could post twice.
+            if (r.ok || r.sent) { markReplied(body.dir, it.id); changed(); }
+            return json(r.ok ? { ok: true } : { ok: false, why: r.note, sent: !!r.sent }, r.ok ? 200 : 502);
+          } finally { replying.delete(key); }
         }
 
         if (path === "/run") {

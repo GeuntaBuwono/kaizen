@@ -17,7 +17,7 @@ updated: 2026-10-15
 
 ## How it connects
 - [[Notebook]] is served from the same server (`/notebook`, `/vault`).
-- [[Sources and icebox]] routes: `/sources`, `/icebox`, `/chatgpt`.
+- [[Sources and icebox]] routes: `/sources`, `/icebox`, `/reply`, `/chatgpt`.
 - Kaizen Bot calls these routes ([[Kaizen bot]], `bot/src/board.ts`).
 
 ## Watch out

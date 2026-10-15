@@ -8,7 +8,7 @@ import { readInbox, writeInbox, replaceIdea, parseItem } from "./state.ts";
 import {
   readSources, addSource, removeSource, ingest, checkUrl, resolvesPublic, exportUrl, fetchText, split, sift,
   gatherSource, gatherAll, due, SIGN_IN, UNREADABLE, CAP, moveSource, gatherDirs, writeSources,
-  readIcebox, writeIcebox, promote, dismiss, setCategory, socialUrl, socialOf, AGENT_ONLY, PLATFORMS,
+  readIcebox, writeIcebox, promote, dismiss, markReplied, setCategory, socialUrl, socialOf, AGENT_ONLY, PLATFORMS,
 } from "./sources.ts";
 
 const root = mkdtempSync(join(tmpdir(), "kaizen-src-"));
@@ -676,4 +676,15 @@ test("a social source is never fetched: gathering records it as one for the agen
   expect(ingest(state, url, [{ text: "Please add a dark mode", notes: "@someone · https://x.com/someone/status/1 · 2026-10-15" }])).toEqual({ added: 1, held: 0 });
   expect(open()).toMatchObject([{ text: "Please add a dark mode", category: "Social", source: url }]);
   expect(readInbox(state)).toEqual([]);
+});
+
+test("a reply is stamped once on its icebox item; a second is refused", () => {
+  const state = mkdtempSync(join(tmpdir(), "kaizen-rp-"));
+  try {
+    writeIcebox(state, [{ id: "a1", text: "post", source: "https://x.com/search?q=k", at: "2026-10-15T00:00:00Z", status: "new" }]);
+    expect(markReplied(state, "zz")).toBe("no such item");
+    expect(markReplied(state, "a1")).toBeNull();
+    expect(readIcebox(state)[0]!.replied).toBeString();
+    expect(markReplied(state, "a1")).toBe("already replied");
+  } finally { rmSync(state, { recursive: true, force: true }); }
 });

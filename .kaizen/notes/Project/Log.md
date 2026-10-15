@@ -14,3 +14,4 @@ updated: 2026-10-15
 - 2026-10-15 run 2026-10-15-browser-social-gather — Sources and icebox, CLI, Index
 - 2026-10-15 run 2026-10-15-tidy-board-footer — Web board (footer: legend and counts merged into status chips)
 - 2026-10-15 release — 1.29.0 published to npm, GitHub Packages, GitHub release (run 2026-10-15-release-1-29-0)
+- 2026-10-15 run 2026-10-15-icebox-reply — Sources and icebox, Web board (Reply to a gathered post)
