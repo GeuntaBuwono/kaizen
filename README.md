@@ -178,8 +178,8 @@ kaizen Done, and reviewed. Two things found:
 
 - **It isn't just for code.** Emails, docs, runbooks, research. kaizen works out what *done* and *wrong* mean for each request, so a book chapter is never reviewed for race conditions.
 - **The reviewer has nothing to defend.** It starts cold, sees only your request, the plan and the result, and finds what the builder talked itself past.
-- **A board for all your work.** Run `kaizen` in a terminal, or `kaizen web` in the browser. Ideas, plans, builds and reviews across every project, updating live. Start a run, approve or revise a plan, answer its questions, pick which findings to fix, then commit and push, all without opening a terminal.
-- **Requests come to you.** Paste a Google Sheet or Doc link and every request in it lands on the board as an idea.
+- **A board for all your work.** Run `kaizen` in a terminal, or `kaizen web` in the browser. Ideas, plans, builds and reviews across every project, updating live. Start a run, approve or revise a plan, answer its questions, pick which findings to fix, then commit and push, all without opening a terminal. The agent a run starts works inside its card, in a Terminal tab you can watch and type into. Prefer a separate terminal window? Switch it in `kaizen settings`; on Windows it always opens one.
+- **Requests come to you.** Paste a Google Sheet or Doc link and every request in it lands in the project's icebox. Promote the ones you want to ideas, or let `/kaizen-discover` sort them for you.
 - **Notes and voice, offline.** A markdown notebook beside the board, plus dictation on every field. Whisper runs in the page, so audio never leaves your machine.
 - **Plain files, any agent.** Every run is a folder of markdown in `.kaizen/`. Start in Claude Code, finish in Codex, Antigravity, OpenCode, Cursor or Gemini CLI.
 
@@ -260,7 +260,7 @@ Each skill has a `scripts/check.sh` that lists what it needs (Node, Python, ffmp
 
 ## Learn more
 
-- **[The guide](https://github.com/hfadhlullah/kaizen/blob/main/docs/guide.md)**: the board, request sources, notebook, settings, installer flags, uninstall
+- **[The guide](https://github.com/hfadhlullah/kaizen/blob/main/docs/guide.md)**: the board, request sources and the icebox, notebook, settings, installer flags, uninstall
 - [Kaizen Bot](https://github.com/hfadhlullah/kaizen/blob/main/bot/README.md): the chat front end, its agents, routines and privacy
 - [`spec.md`](https://github.com/hfadhlullah/kaizen/blob/main/skills/kaizen/spec.md): the contract every stage follows
 - [`adapters.md`](https://github.com/hfadhlullah/kaizen/blob/main/skills/kaizen/adapters.md): running outside Claude Code, with Codex and Antigravity as the worked examples. OpenCode, Cursor and Gemini CLI load the same skill folder
