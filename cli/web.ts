@@ -597,9 +597,9 @@ export async function web(repoDir: string, opts: Opts = {}) {
               const why = moveSource(dir, body.to, link);
               if (why) return bad(why, why === "no such source" ? 404 : 409);
             } else if (body.op === "agent") {
-              // Kaizen never fetches a social source itself. The ChatGPT plan reads it when
-              // connected and chosen; otherwise the agent opens on /kaizen gather, in a
-              // terminal, since there is no card to run it in.
+              // Kaizen's browser reads a social source's posts; the ChatGPT plan picks the
+              // ones that fit when connected and chosen. Otherwise the agent opens on
+              // /kaizen gather, in a terminal, since there is no card to run it in.
               if (await setting("sources.agent") === "chatgpt" && chatgpt.status().connected) {
                 if (!readSources(dir).some((s) => s.url === link)) return bad("no such source", 404);
                 results = [await chatgpt.gatherSource(dir, link, await setting("sources.model"), (await setting("sources.effort")) || "low")];

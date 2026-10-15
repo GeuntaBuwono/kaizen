@@ -21,7 +21,7 @@ kaizen is a staged workflow for AI agents (plan, approval, build, independent re
 - [[Terminal board]] — The TUI dashboard that `kaizen` opens in a terminal
 - [[Web board]] — `kaizen web`: the browser board, its HTTP routes, and the shared state layer
 - [[Notebook]] — The Notes tab: an Obsidian-compatible markdown folder under .kaizen/notes/
-- [[Sources and icebox]] — Request sources, gather, the icebox, and ChatGPT sign-in for social sources
+- [[Sources and icebox]] — Request sources, gather, the icebox, kaizen's browser for social posts, and ChatGPT judging them
 - [[Kaizen bot]] — Kaizen Bot: a chat front end with division agents over the board
 - [[Release and testing]] — How to test, build the web bundles, and publish a release
 - [[Conventions and gotchas]] — How work is done in this repo, and the traps that have bitten before

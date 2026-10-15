@@ -7,7 +7,7 @@ updated: 2026-10-15
 # CLI
 
 ## What it does
-`kaizen` / `kaizen-agent` (both `cli/install.ts`, see `package.json` `bin`) is one top-level script that installs the workflow as links into the agent's folders, and dispatches subcommands: `web`, `settings`/`config`, `upgrade`, `uninstall`, `prune`, `sources`/`gather`/`icebox`, `issue`. With no subcommand in an installed setup it opens the [[Terminal board]]. Flags and behaviour for users: `docs/guide.md` ("Install", "Under the hood").
+`kaizen` / `kaizen-agent` (both `cli/install.ts`, see `package.json` `bin`) is one top-level script that installs the workflow as links into the agent's folders, and dispatches subcommands: `web`, `settings`/`config`, `upgrade`, `uninstall`, `prune`, `sources`/`gather`/`icebox`, `browser login`, `issue`. With no subcommand in an installed setup it opens the [[Terminal board]]. Flags and behaviour for users: `docs/guide.md` ("Install", "Under the hood").
 
 ## Where it lives
 - `cli/install.ts` — everything above; `initProject()` writes a project's `.kaizen/`, its gitignore block and the `## Kaizen workflow` block in `CLAUDE.md` (`writePointer()`).
@@ -16,7 +16,7 @@ updated: 2026-10-15
 
 ## How it connects
 - Links [[Workflow]] files into `~/.claude/skills`, `agents`, `commands`.
-- `web` starts the [[Web board]]; `sources`/`gather`/`icebox` drive [[Sources and icebox]].
+- `web` starts the [[Web board]]; `sources`/`gather`/`icebox` and `browser login` drive [[Sources and icebox]].
 
 ## Watch out
 - **Never run `kaizen uninstall` against the real install or this checkout** — it deletes `$KAIZEN_HOME`; test in a scratch copy with scratch `HOME` (`.kaizen/memory.md`, header of `cli/install.test.ts`).

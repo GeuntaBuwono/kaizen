@@ -79,6 +79,18 @@ const found = (r: string) =>
 // Request sources. Dispatched on the first word alone and ahead of every flag
 // check below, so a label or a link that happens to read `web` or `uninstall` is
 // only ever a label.
+// `kaizen browser login [platform]` signs kaizen's own browser profile in to the
+// social platforms it reads sources from. Nothing else uses that profile.
+if (Bun.argv[2] === "browser") {
+  const { login, profileDir } = await import("./browser.ts");
+  if (Bun.argv[3] !== "login") { console.log(`\n  kaizen browser login [x|threads|instagram|tiktok]\n  ${c.dim("signs kaizen's browser in, for gathering social sources")}\n`); process.exit(1); }
+  console.log(`\n  ${c.dim("Sign in, then close the browser window. The sign-in stays in")} ${tilde(profileDir())}\n`);
+  const why = await login(Bun.argv[4] ?? "");
+  if (why) { console.log(`  ${why}\n`); process.exit(1); }
+  console.log(`  ${c.green("done")}\n`);
+  process.exit(0);
+}
+
 if (Bun.argv[2] === "sources" || Bun.argv[2] === "gather" || Bun.argv[2] === "icebox") {
   const { locate, label } = await import("./state.ts");
   const src = await import("./sources.ts");
@@ -118,6 +130,16 @@ if (Bun.argv[2] === "sources" || Bun.argv[2] === "gather" || Bun.argv[2] === "ic
         return { text, notes: notes.join(" ") };
       });
       console.log(line(src.record(state, url, src.ingest(state, url, items))) + "\n" + waiting);
+    } else if (cmd === "gather" && op === "--posts") {
+      // The posts of a social source, read through kaizen's browser, one per line with
+      // a tab and its notes: what the agent picks from in /kaizen gather.
+      if (!src.readSources(state).some((s) => s.url === url)) { console.log(`
+  not a listed source: ${url || "(no link given)"}
+`); process.exit(1); }
+      const { readPosts, noteOf } = await import("./browser.ts");
+      const r = await readPosts(url);
+      if (!r.ok) { console.log(`\n  ${r.note}\n`); process.exit(1); }
+      console.log(r.posts.map((p) => `${p.text.replace(/\s+/g, " ")}\t${noteOf(p)}`).join("\n"));
     } else if (cmd === "gather") {
       const results = await src.gatherAll(state);
       console.log(results.length ? results.map(line).join("\n") + "\n" + waiting : `\n  no sources yet ${c.dim("— kaizen sources add <link>")}\n`);

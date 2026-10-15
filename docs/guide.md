@@ -192,23 +192,31 @@ a plain-text link gives one request per line.
 
 A source can also be social media: switch the form to **Social**, pick X, TikTok,
 Instagram or Threads, and type a keyword, a `#hashtag` or an `@account` to follow.
-Kaizen stores it as that platform's public search, tag or profile link and never reads
-it itself — those pages need a sign-in. Run `/kaizen gather` in your agent: it reads
-recent public posts (falling back to a web search on that site), copies each post's
-text as a request with its author, link and date as notes, and puts them in the
-icebox under the source's category. From a terminal, `kaizen sources add` with the
-platform link works the same.
+Kaizen stores it as that platform's search, tag or profile link, and reads it through
+a browser on your computer: an installed Chrome, Chromium or Edge, in a profile of its
+own (`~/.kaizen/browser/`). Most of these pages need a sign-in, so sign that browser in
+once with `kaizen browser login` — a window opens on the X, Threads, Instagram and
+TikTok sign-in pages; sign in where you want, then close it (`kaizen browser login
+threads` opens just one). Reading posts this way is automated access, which these
+platforms' terms do not allow; kaizen reads at most 40 posts per source and only when
+you gather, but use a spare account rather than your main one. TikTok and Instagram
+can show posts without a sign-in. When a page wants one, the source says *Sign in
+once: kaizen browser login <platform>*; when it wants a human check (a captcha), pass
+it in the same window.
 
-Instead of your agent, your ChatGPT plan can read social sources: connect it from the
-Icebox (setting `sources.agent`), and **Gather** on a social source asks ChatGPT, with
-web search, for the same posts. Either way the gatherer keeps posts relevant to the
-project rather than only explicit feature requests — a need, a pain or a wish the
-project could answer. It judges that by the project's `README.md`, or the opening of
-the notebook index when there is no README. With ChatGPT, the first 1500 characters of
-that description are sent to OpenAI with each gather. A source that has never turned
-up anything says *no requests found*; *nothing new* means everything it found is
-already in the icebox. A post is only filed under a source when its link is on that
-source's platform. Google Sheets, Docs and plain-text links are read as they are, with
+Kaizen then keeps only the posts relevant to the project — a need, a pain or a wish
+the project could answer, not only explicit feature requests — judged by the project's
+`README.md`, or the opening of the notebook index when there is no README. Each kept
+post lands in the icebox in its own words, with its author, link and date as notes,
+under the source's category. Who judges is the setting `sources.agent`: your ChatGPT
+plan, connected from the Icebox, judges when you press **Gather**; otherwise Gather
+opens `/kaizen gather` in your agent, which judges the same posts (`kaizen gather
+--posts '<link>'` prints them). ChatGPT is sent the posts' text and the first 1500
+characters of that description, and answers with the numbers of the posts to keep:
+the text that lands in the icebox is always the post's own. A source that never turned
+up anything says *no requests found*; *the page showed no posts* means the platform's
+own search found nothing; *read 30 posts, none fit this project* is what it says; and
+*nothing new* means everything it found is already in the icebox. Google Sheets, Docs and plain-text links are read as they are, with
 no relevance check: every request in them lands in the icebox.
 
 The icebox reads like an inbox: one row per request as the source wrote it, grouped
