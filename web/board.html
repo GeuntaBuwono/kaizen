@@ -1096,6 +1096,8 @@ let pageGen=0;
 async function openSettings(){
  if(view!=="settings")return;const gen=++pageGen;
  stopDictation(true);
+ // Coming from another page or a card, its body goes now, not when the fetch answers.
+ if(!$("panel").classList.contains("open")||$("ptitle").textContent!=="Settings"){$("pbody").innerHTML=`<p class="snone">Loading…</p>`;$("psub").textContent=""}
  termStop();openKey=null;runDoc=null;$("pterm").hidden=true;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent="Settings";$("ptabs").innerHTML="";$("pfoot").innerHTML="";
  const cur=document.documentElement.dataset.theme||"system";
  const cfg=await fetch("/settings").then(r=>r.json()).catch(()=>null);
@@ -1186,6 +1188,7 @@ async function openSources(){
  const iceDraft=srcOpen()&&$("ice-title")?[$("ice-title").dataset.k,$("ice-title").value,$("ice-details").value]:null;
  // And a category typed on a row but not yet saved.
  const cats=new Map(srcOpen()?[...$("pbody").querySelectorAll("[data-ct]")].map(m=>[m.dataset.k,m.value]):[]);
+ if(!srcOpen())$("pbody").innerHTML=`<p class="snone">Loading…</p>`;
  termStop();openKey=null;runDoc=null;$("pterm").hidden=true;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=SRC;$("ptabs").innerHTML="";$("pfoot").innerHTML="";
  $("psub").textContent="Requests gathered from your sources wait here until you promote them to Ideas or dismiss them; nothing starts on its own.";$("psub").title="";
  const dir=all?null:S.dir,q=dir?"?dir="+encodeURIComponent(dir):"";
