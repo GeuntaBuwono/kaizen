@@ -973,3 +973,28 @@ test("moveIdea carries notes and linked attachments, leaves the old inbox withou
   expect(moveIdea(a, b, "go")).toBe("that project already has this idea");
   rmSync(root, { recursive: true, force: true });
 });
+
+test("newer: an update is offered only for a strictly later release", async () => {
+  const { newer } = await import("./web.ts");
+  expect(newer("1.31.0", "1.30.0")).toBe(true);
+  expect(newer("1.30.0", "1.4.0")).toBe(true);
+  expect(newer("1.30.0", "1.30.0")).toBe(false);
+  expect(newer("1.4.0", "1.30.0")).toBe(false);
+  expect(newer("2.0", "1.99.9")).toBe(true);
+});
+
+// The real server in a scratch home. Only refusals: a same-origin POST would run a real upgrade.
+test("the board refuses an upgrade from another origin", async () => {
+  const homeDir = mkdtempSync(join(tmpdir(), "kaizen-upd-"));
+  for (const d of [join(homeDir, ".kaizen"), join(homeDir, ".claude")]) mkdirSync(d, { recursive: true });
+  const port = 20000 + Math.floor(Math.random() * 20000), repo = join(import.meta.dir, "..");
+  const proc = Bun.spawn([process.execPath, join(repo, "cli", "install.ts"), "web", "--port", String(port), "--no-open", "--foreground"], {
+    cwd: homeDir, env: { ...process.env, HOME: homeDir, USERPROFILE: homeDir, KAIZEN_HOME: repo }, stdout: "ignore", stderr: "ignore",
+  });
+  try {
+    const at = `http://127.0.0.1:${port}`;
+    for (let i = 0; ; i++) { try { await fetch(at + "/state"); break; } catch { if (i > 100) throw new Error("board did not start"); await Bun.sleep(50); } }
+    const r = await fetch(at + "/upgrade", { method: "POST", headers: { origin: "https://evil.example" } });
+    expect(r.status).toBe(403);
+  } finally { proc.kill(); await proc.exited; rmSync(homeDir, { recursive: true, force: true }); }
+});

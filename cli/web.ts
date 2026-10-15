@@ -48,6 +48,29 @@ export async function current(url: string) {
   return !!r?.ok && r.headers.get("x-kaizen-version") === VERSION;
 }
 
+// The newest kaizen on npm, asked at most every six hours; a failed ask is retried
+// on the next one. Same registry call as npmLatest() in install.ts, which exports nothing.
+let latest: { v: string | null; at: number } = { v: null, at: 0 };
+async function npmLatest() {
+  if (latest.v && Date.now() - latest.at < 6 * 3600_000) return latest.v;
+  try {
+    const r = await fetch("https://registry.npmjs.org/kaizen-agent/latest", { signal: AbortSignal.timeout(10000) });
+    const v = ((await r.json()) as { version?: string }).version ?? null;
+    if (v) latest = { v, at: Date.now() };
+    return v;
+  } catch { return null; }
+}
+// a is a later release than b: dotted numbers compared in order, so 1.30.0 > 1.4.0.
+// A dev checkout ahead of npm is not offered an "update" back down.
+export function newer(a: string, b: string) {
+  const x = a.split(".").map(Number), y = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] || 0) - (y[i] || 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+
 type Opts = { port?: number; open?: boolean };
 
 export async function web(repoDir: string, opts: Opts = {}) {
@@ -434,6 +457,36 @@ export async function web(repoDir: string, opts: Opts = {}) {
         }
         const msg = why ? `Could not connect ChatGPT: ${why}` : `ChatGPT connected${chatgpt.status().email ? ` as ${chatgpt.status().email}` : ""}. Gather now reads social sources with your plan. You can close this tab.`;
         return new Response(`<!doctype html><meta charset="utf-8"><title>kaizen</title><body style="font:15px system-ui;padding:40px;max-width:560px;margin:auto">${msg.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}</body>`, { headers: { "content-type": "text/html; charset=utf-8" } });
+      }
+
+      // What this board runs and what npm has: the page shows an Update button on a newer one.
+      if (req.method === "GET" && path === "/version") {
+        const v = await npmLatest();
+        return json({ version: VERSION, latest: v, update: !!v && newer(v, VERSION) });
+      }
+
+      // `kaizen upgrade`, run here with no window, then a new board on this port: it
+      // finds this one serving the old version and stops it (the stale-board path in
+      // web()), and open pages reload on its new boot id. A failed upgrade leaves
+      // this board running and says why.
+      if (req.method === "POST" && path === "/upgrade") {
+        if (!local(req)) return bad("cross-origin write refused", 403);
+        if (upgrading) return bad("an upgrade is already running", 409);
+        upgrading = true;
+        try {
+          const p = Bun.spawn([process.execPath, join(repoDir, "cli", "install.ts"), "upgrade"], { stdin: "ignore", stdout: "pipe", stderr: "pipe", windowsHide: true });
+          const [out, err, code] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text(), p.exited]);
+          const why = (out + err).replace(/\x1b\[[0-9;]*m/g, "").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("+")).slice(-2).join(" — ");
+          if (code !== 0) return bad(why || `kaizen upgrade exited ${code}`, 500);
+          if (installed() === VERSION) return bad(why || "Already up to date");
+          const port = srv.port;
+          setTimeout(() => {
+            Bun.spawn([process.execPath, join(repoDir, "cli", "install.ts"), "web", "--port", String(port), "--no-open", "--foreground"], {
+              detached: true, stdio: ["ignore", "ignore", "ignore"], windowsHide: true,
+            }).unref();
+          }, 300);
+          return json({ ok: true, version: installed() });
+        } finally { upgrading = false; }
       }
 
       // Connect or disconnect the ChatGPT plan. The page opens the URL it is handed.
@@ -918,6 +971,8 @@ async function openDefault(url: string) {
 // Windows keeps browsers out of PATH; the usual install roots are the next best guess.
 // One dialog at a time: a second click while one is open would stack another.
 let picking = false;
+// One `kaizen upgrade` at a time, from any page.
+let upgrading = false;
 
 // The system folder picker for this platform, printing the chosen path on stdout.
 // macOS and Windows always have one; on Linux it is whichever desktop tool exists.

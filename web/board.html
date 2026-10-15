@@ -286,6 +286,8 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 .car i{display:flex;gap:3px}.car u{width:14px;height:3px;border-radius:2px;background:var(--line)}.car u.on{background:var(--accent)}
 .toast{position:fixed;z-index:12;left:28px;bottom:56px;max-width:calc(100% - 56px);background:var(--ink);color:var(--bg);border-radius:var(--r);padding:10px 16px;font-size:13px;box-shadow:var(--shadow-2);opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
+.rail a.upd svg{overflow:visible}.rail a.upd{position:relative}.rail a.upd::after{content:"";position:absolute;left:28px;top:8px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg)}
+.updbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;margin:0 0 36px;padding:10px 14px;border:1px solid var(--accent);border-radius:var(--r);background:color-mix(in srgb,var(--accent) 10%,var(--bg-2));font-size:13px}
 .toast.on.rep{pointer-events:auto}.toast a{color:inherit;margin-left:8px;text-decoration:underline;text-underline-offset:2px}
 .help{position:fixed;inset:0;z-index:12;display:none;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 60%,transparent);backdrop-filter:blur(3px)}
 .help.on{display:flex}.help div{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:24px 28px;box-shadow:var(--shadow-2)}
@@ -1111,6 +1113,7 @@ async function openSettings(){
   ${row("Notifications",`<button class="chk${np==="granted"?" on":""}" id="nt" role="switch" aria-checked="${np==="granted"}"${np&&np!=="denied"?"":" disabled"}></button>`,ntHelp,"nt","notifications "+ntHelp+" browser")}
   <p class="snone" id="snone" hidden></p>`;
  // Hides rows that do not match, then any group (and its chip) left with none.
+ updBar();
  const heads=[...$("pbody").querySelectorAll(".sg")],chips=[...$("pbody").querySelectorAll(".sjump button")];
  const filter=()=>{const q=setQ.trim().toLowerCase();let any=false;
   heads.forEach((h,i)=>{let n=h.nextElementSibling,vis=false;for(;n&&n.matches(".srow");n=n.nextElementSibling){n.hidden=!!q&&!n.dataset.q.includes(q);vis||=!n.hidden}h.hidden=!vis;if(chips[i])chips[i].hidden=!vis;any||=vis});
@@ -1424,6 +1427,14 @@ $("shows").onchange=e=>{const i=e.target.dataset.i,d=SP[i]?.dir;if(!d)return;e.t
 $("showall").onclick=()=>{shown.clear();setShown()};
 document.addEventListener("click",e=>{if(!e.target.closest("#showc")){$("showpop").hidden=true;$("show").setAttribute("aria-expanded",false)}});
 $("newtop").onclick=()=>{mode="new";render();$("board").scrollTo(0,0)};
+// A newer kaizen on npm: a dot on Settings, and an Update bar at the top of that page.
+// The server upgrades and starts a board on the new version, which replaces this one;
+// the hello with its new boot id reloads the page (listen()).
+let upd=null;
+fetch("/version").then(r=>r.json()).then(v=>{if(!v.update)return;upd=v;const a=document.querySelector('.rail a[data-view="settings"]');a.classList.add("upd");a.title=`Settings: kaizen ${v.latest} is available`;if(view==="settings")openSettings()}).catch(()=>{});
+function updBar(){if(!upd)return;const d=document.createElement("div");d.className="updbar";d.innerHTML=`<span>kaizen <b>${esc(upd.latest)}</b> is available. You are running ${esc(upd.version)}.</span><button class="btn pri" id="upd-go">Update kaizen</button>`;$("pbody").prepend(d);
+ const b=$("upd-go");b.onclick=async()=>{if(!confirm(`Update kaizen to ${upd.latest}? The board restarts, and agents running inside cards stop.`))return;b.disabled=true;b.textContent="Updating…";
+  const r=await post("/upgrade",{});if(!r.ok){b.disabled=false;b.textContent="Update kaizen";return}b.textContent="Restarting…";setTimeout(()=>location.reload(),20000)}}
 $("kbd").onclick=()=>$("help").classList.add("on");$("help").onclick=()=>$("help").classList.remove("on");
 document.addEventListener("click",()=>{if(menuKey||clearMenu){menuKey=null;clearMenu=false;render()}});
 document.onkeydown=e=>{
