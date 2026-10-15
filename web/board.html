@@ -207,12 +207,12 @@ aside.wide{width:min(960px,100%)}#pbody .term{height:100%;min-height:320px;backg
 .scrim.on{display:block}
 aside{position:fixed;top:0;right:0;bottom:0;z-index:11;width:520px;max-width:100%;background:var(--bg-2);border-left:1px solid var(--line);box-shadow:var(--shadow-2);display:flex;flex-direction:column;transform:translateX(100%);visibility:hidden;transition:transform .18s,visibility .18s}
 aside.open{transform:none;visibility:visible}
-/* Settings and the Icebox are pages: the same panel, docked into the app column, its content in a centred column */
+/* Settings and the Icebox are pages: the same panel, docked into the app column, full width like the board */
 body.paged #board,body.paged .ftr,body.paged .scrim{display:none}
 /* The Icebox keeps the project bar, without the board's title and New idea; Settings has none */
 body.paged:not(.ice) .hdr,body.ice .hdr h1{display:none}body.ice #newtop{visibility:hidden}
 aside.docked{position:static;z-index:auto;flex:1;min-height:0;width:auto;transform:none;visibility:visible;transition:none;box-shadow:none;border:0;background:none}
-aside.docked>header,aside.docked>.body{padding-inline:max(28px,calc((100% - 760px)/2))}
+aside.docked>header,aside.docked>.body{padding-inline:28px}
 aside.docked>header{border-bottom:0;padding-top:28px;padding-bottom:12px}
 aside.docked>header b{font-size:20px}
 aside.docked #pclose{display:none}
@@ -385,7 +385,8 @@ body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
 .src-empty-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px;text-align:left}
 .src-empty-item{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-s);padding:8px 10px;font-size:11px;color:var(--dim);line-height:1.4}
 .src-empty-item strong{display:block;color:var(--ink);font-weight:500;margin-bottom:2px}
-.src-add{display:grid;gap:12px;margin-top:20px;padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r)}
+.src-add[hidden]{display:none}.src-hda{display:flex;align-items:center;gap:6px}
+.src-add{display:grid;gap:12px;margin-bottom:16px;padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r)}
 .src-add h4{margin:0;font-size:13px;font-weight:600;color:var(--ink)}
 .src-add .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .src-add .two.plat{grid-template-columns:140px 1fr}
@@ -1089,11 +1090,16 @@ function progress(src,prev){
 const groups=rows=>{const m=new Map();for(const r of rows){if(!m.has(r.group))m.set(r.group,[]);m.get(r.group).push(r)}return [...m]};
 // The search survives the re-render each save does; the gear button starts it empty.
 let setQ="";
+// Settings and the Icebox fill the same panel after a fetch: a fill only lands if no other view
+// or fill started since, or a slow answer paints one page under the other's title.
+let pageGen=0;
 async function openSettings(){
+ if(view!=="settings")return;const gen=++pageGen;
  stopDictation(true);
  termStop();openKey=null;runDoc=null;$("pterm").hidden=true;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent="Settings";$("ptabs").innerHTML="";$("pfoot").innerHTML="";
  const cur=document.documentElement.dataset.theme||"system";
  const cfg=await fetch("/settings").then(r=>r.json()).catch(()=>null);
+ if(gen!==pageGen)return;
  $("psub").textContent="Theme applies to this browser. Everything else is saved to your kaizen settings.";$("psub").title=cfg?cfg.file:"";
  // One control per row: a switch for on/off, one segment per value for a small number,
  // a select for a choice. The row's label names the control; its help sits under it.
@@ -1136,7 +1142,7 @@ async function openSettings(){
 // ---- views: the board, or Settings and the Icebox as pages in the docked panel, each with its own address
 let view="board";
 const markView=v=>document.querySelectorAll(".rail a.it").forEach(a=>a.dataset.view===v?a.setAttribute("aria-current","page"):a.removeAttribute("aria-current"));
-function go(v,push){if(v==="icebox")v="sources";if(!["settings","sources"].includes(v))v="board";const was=view;view=v;markView(v);document.body.classList.toggle("paged",v!=="board");document.body.classList.toggle("ice",v==="sources");
+function go(v,push){pageGen++;if(v==="icebox")v="sources";if(!["settings","sources"].includes(v))v="board";const was=view;view=v;markView(v);document.body.classList.toggle("paged",v!=="board");document.body.classList.toggle("ice",v==="sources");
  if(push&&v!==was)history.pushState(null,"",v==="board"?location.pathname:"?view="+(v==="sources"?"icebox":v));
  const p=$("panel");
  if(v==="board"){if(was==="board")return;
@@ -1163,11 +1169,12 @@ const SRC="Icebox";
 let iceReply=null;const iceStyle={};
 const rStyle=dir=>{if(!iceStyle[dir])try{iceStyle[dir]=localStorage.getItem("kz-reply-style:"+dir)}catch(e){}return iceStyle[dir]||"casual"};
 const STYLES={casual:"Casual",fun:"Fun",helpful:"Helpful",promo:"Promo"};
-let iceForm=null,iceCur=null,iceSrc="",iceCat="",srcKind="link",srcShow=null,iceBusy=false,iceNav=null;const iceSel=new Set();
+let iceForm=null,iceCur=null,iceSrc="",iceCat="",srcKind="link",srcShow=null,srcAdd=false,iceBusy=false,iceNav=null;const iceSel=new Set();
 const PLAT={x:"X",tiktok:"TikTok",instagram:"Instagram",threads:"Threads"};
 const srcOpen=()=>$("panel").classList.contains("open")&&$("ptitle").textContent===SRC;
 const ago=at=>{const m=Math.round((Date.now()-Date.parse(at))/60000);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" d ago"};
 async function openSources(){
+ if(view!=="sources")return;const gen=++pageGen;
  stopDictation(true);
  // What is half typed survives a refresh from the server.
  const typed=srcOpen()?[$("src-url")?.value||"",$("src-label")?.value||"",document.activeElement?.id,$("src-dir")?.value,$("src-cat")?.value||"",$("src-plat")?.value,$("src-q")?.value||""]:["",""];
@@ -1183,7 +1190,7 @@ async function openSources(){
  $("psub").textContent="Requests gathered from your sources wait here until you promote them to Ideas or dismiss them; nothing starts on its own.";$("psub").title="";
  const dir=all?null:S.dir,q=dir?"?dir="+encodeURIComponent(dir):"";
  const d=await fetch("/sources"+q).then(r=>r.json()).catch(()=>null);
- if(!srcOpen())return;
+ if(gen!==pageGen||!srcOpen())return;
  const host=u=>{try{return new URL(u).hostname}catch{return u}};
  // The favicon of the site a link is on, asked of that site itself (Google's own static host for
  // Sheets and Docs, whose site icon is generic): nothing but the host reaches anyone. A social
@@ -1206,7 +1213,8 @@ async function openSources(){
  const fails=(d&&d.failed||[]).map(f=>`<p style="color:var(--dim)">The sources of ${esc(f)} could not be read.</p>`).join("");
  const emptyState=`<div class="src-empty"><div class="src-empty-ico">${ico("link")}</div><h4>No request sources yet</h4><p>Connect shared links to gather requests into the icebox, where you choose which become ideas. Nothing runs automatically until you start it.</p><div class="src-empty-grid"><div class="src-empty-item"><strong>Google Sheets</strong>Public sheets with idea or task rows. Rows marked Done are skipped.</div><div class="src-empty-item"><strong>Google Docs</strong>Shared public docs with items or notes written line by line.</div><div class="src-empty-item"><strong>Public links</strong>TSV, CSV, or raw text links containing requests.</div><div class="src-empty-item"><strong>Social media</strong>A keyword, #hashtag or @account on X, TikTok, Instagram or Threads, read by your agent.</div></div></div>`;
  const social=srcKind==="social";
- const addBox=`<div class="src-add"><div class="hd"><h4>Add a source</h4><div class="src-kind" role="group" aria-label="Kind of source"><button id="src-k-link" data-kind="link" aria-pressed="${!social}">Link</button><button id="src-k-social" data-kind="social" aria-pressed="${social}">Social</button></div></div><label for="src-url"${social?" hidden":""}><span>Link</span><input class="sel" id="src-url" placeholder="https://docs.google.com/spreadsheets/d/… or any public link" spellcheck="false" autocomplete="off"></label><div class="two plat"${social?"":" hidden"}><label for="src-plat"><span>Platform</span><select class="sel" id="src-plat">${Object.entries(PLAT).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label><label for="src-q"><span>Follow</span><input class="sel" id="src-q" placeholder="keyword, #hashtag or @account" maxlength="100" spellcheck="false" autocomplete="off"></label></div><div class="two"><label for="src-label"><span>Label <i>optional</i></span><input class="sel" id="src-label" placeholder="${social?"e.g. Mentions on X":"e.g. Feedback Q4"}"></label><label for="src-cat"><span>Category <i>optional</i></span><input class="sel" id="src-cat" placeholder="${social?"e.g. Social":"e.g. Bugs"}" maxlength="40"></label></div><label for="src-dir"><span>Project</span><select class="sel" id="src-dir">${dir?"":`<option value="">Choose project…</option>`}${opts(dir)}</select></label><div class="acts"><span class="hint">${social?(chatOn?"Your ChatGPT plan reads public posts when you press Gather on the source.":"Kaizen signs in nowhere. Your agent reads public posts when you press Gather on the source."):"Public links only. For private docs, run /kaizen gather."}</span><button class="btn pri" id="src-add">Add source</button></div></div>`;
+ const addOn=!list.length||srcAdd||[typed[0],typed[1],typed[4],typed[6]].some(Boolean);
+ const addBox=`<div class="src-add" id="src-addbox"${addOn?"":" hidden"}><div class="hd"><h4>Add a source</h4><div class="src-kind" role="group" aria-label="Kind of source"><button id="src-k-link" data-kind="link" aria-pressed="${!social}">Link</button><button id="src-k-social" data-kind="social" aria-pressed="${social}">Social</button></div></div><label for="src-url"${social?" hidden":""}><span>Link</span><input class="sel" id="src-url" placeholder="https://docs.google.com/spreadsheets/d/… or any public link" spellcheck="false" autocomplete="off"></label><div class="two plat"${social?"":" hidden"}><label for="src-plat"><span>Platform</span><select class="sel" id="src-plat">${Object.entries(PLAT).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label><label for="src-q"><span>Follow</span><input class="sel" id="src-q" placeholder="keyword, #hashtag or @account" maxlength="100" spellcheck="false" autocomplete="off"></label></div><div class="two"><label for="src-label"><span>Label <i>optional</i></span><input class="sel" id="src-label" placeholder="${social?"e.g. Mentions on X":"e.g. Feedback Q4"}"></label><label for="src-cat"><span>Category <i>optional</i></span><input class="sel" id="src-cat" placeholder="${social?"e.g. Social":"e.g. Bugs"}" maxlength="40"></label></div><label for="src-dir"><span>Project</span><select class="sel" id="src-dir">${dir?"":`<option value="">Choose project…</option>`}${opts(dir)}</select></label><div class="acts"><span class="hint">${social?(chatOn?"Your ChatGPT plan reads public posts when you press Gather on the source.":"Kaizen signs in nowhere. Your agent reads public posts when you press Gather on the source."):"Public links only. For private docs, run /kaizen gather."}</span><button class="btn pri" id="src-add">Add source</button></div></div>`;
  // The inbox: one row per request, by project when showing all, then by category,
  // narrowed to one source by its chip. Checked, open and cursor items are kept by key.
  const srcName=it=>{const s=list.find(x=>x.dir===it.dir&&x.url===it.source);return s?s.label||host(s.url):host(it.source)};
@@ -1255,7 +1263,7 @@ async function openSources(){
  // The sources, in the right-hand drawer: shut until asked for, open by itself while there
  // are none until closed. Slid in only when opened; a rebuild while open shows it in place.
  const drawer=srcShow??!list.length,slide=drawer&&!$("src-sec")?.classList.contains("open");
- const sec=`<div class="src-scrim${drawer&&!slide?" on":""}" id="src-scrim"></div><aside class="src-sec${drawer&&!slide?" open":""}" id="src-sec" aria-label="Sources"${drawer?"":" inert"}><header><div class="t"><b>Sources</b><div class="sub">${d&&d.every&&d.every!=="off"?`Auto-check every ${esc(d.every)}`:"Auto-check off"} · <a id="src-to-settings" role="button" tabindex="0">Settings</a> · ${G.connected?`ChatGPT${G.email?" "+esc(G.email):""} <a id="cg-out" role="button" tabindex="0">Disconnect</a>`:`<a id="cg-in" role="button" tabindex="0">Connect ChatGPT</a>`}</div></div><button class="ib" id="src-x" aria-label="Close sources" title="Close">${ico("close")}</button></header><div class="body">${list.length?`<div class="src-list">${cards}</div>`:emptyState}${addBox}</div></aside>`;
+ const sec=`<div class="src-scrim${drawer&&!slide?" on":""}" id="src-scrim"></div><aside class="src-sec${drawer&&!slide?" open":""}" id="src-sec" aria-label="Sources"${drawer?"":" inert"}><header><div class="t"><b>Sources</b><div class="sub">${d&&d.every&&d.every!=="off"?`Auto-check every ${esc(d.every)}`:"Auto-check off"} · <a id="src-to-settings" role="button" tabindex="0">Settings</a> · ${G.connected?`ChatGPT${G.email?" "+esc(G.email):""} <a id="cg-out" role="button" tabindex="0">Disconnect</a>`:`<a id="cg-in" role="button" tabindex="0">Connect ChatGPT</a>`}</div></div><div class="src-hda">${list.length?`<button class="btn sm" id="src-new" aria-expanded="${addOn}" aria-controls="src-addbox">${ico("plus")} Add</button>`:""}<button class="ib" id="src-x" aria-label="Close sources" title="Close">${ico("close")}</button></div></header><div class="body">${addBox}${list.length?`<div class="src-list">${cards}</div>`:emptyState}</div></aside>`;
  // First visit: offer the ChatGPT plan for social sources, or keep the agent.
  const onb=G.use==="ask"&&!G.connected?`<div class="cg-onb"><b>Gather social posts with your ChatGPT plan</b><p>Connect ChatGPT Plus or Pro and Gather reads X, TikTok, Instagram and Threads sources right here, counted against your plan, with no agent to open. Skip it and Gather keeps using your agent. You can change this in Settings.</p><div class="acts"><button class="btn ghost" id="cg-skip">Skip for now</button><button class="btn pri" id="cg-go">Continue with ChatGPT</button></div></div>`:"";
  $("pbody").innerHTML=d&&d.error?`<p style="color:var(--dim)">${esc(d.error)}</p>`:!d?`<p style="color:var(--dim)">The icebox could not be read.</p>`:onb+bar+bulk+fails+inbox+sec;
@@ -1271,7 +1279,8 @@ async function openSources(){
  if($("cg-out"))$("cg-out").onclick=async()=>{if(!confirm("Disconnect ChatGPT? Gather goes back to your agent."))return;if((await post("/chatgpt",{op:"disconnect"})).ok){toast("ChatGPT disconnected");openSources()}};
  if(slide){$("src-sec").offsetWidth;$("src-sec").classList.add("open");$("src-scrim").classList.add("on")}
  const srcShut=()=>{srcShow=false;$("src-sec").classList.remove("open");$("src-scrim").classList.remove("on");$("src-sec").inert=true;$("src-tog").setAttribute("aria-expanded","false");$("src-tog").focus()};
- $("src-x").onclick=$("src-scrim").onclick=srcShut;$("src-sec").onkeydown=e=>{if(e.key==="Escape"){e.stopPropagation();srcShut()}};
+ $("src-x").onclick=$("src-scrim").onclick=srcShut;
+ if($("src-new"))$("src-new").onclick=()=>{const b=$("src-addbox");srcAdd=b.hidden;b.hidden=!srcAdd;$("src-new").setAttribute("aria-expanded",srcAdd);if(srcAdd)$(srcKind==="social"?"src-q":"src-url").focus()};$("src-sec").onkeydown=e=>{if(e.key==="Escape"){e.stopPropagation();srcShut()}};
  $("src-tog").onclick=()=>{if($("src-sec").classList.contains("open"))return srcShut();srcShow=true;openSources().then(()=>srcShow&&$("src-url")?.focus())};
  if($("ice-fs"))$("ice-fs").onchange=e=>{iceSrc=e.target.value;openSources()};
  if($("ice-fc"))$("ice-fc").onchange=e=>{iceCat=e.target.value;openSources()};
@@ -1372,7 +1381,7 @@ async function openSources(){
    else if(j.ok){$("src-url").value=$("src-label").value=$("src-cat").value="";const g=await post("/sources",{op:"gather",dir:to,url}),r=g.results&&g.results[0];
     toast(r?(r.ok?`Source added: ${r.note} in the icebox`:`Source added, but: ${r.note}`):"Source added");load()}
    else toast(j.error||"Could not add source");
-   if(srcOpen())openSources()})()};
+   if(j.ok)srcAdd=false;if(srcOpen())openSources()})()};
  $("src-url").onkeydown=$("src-q").onkeydown=$("src-label").onkeydown=$("src-cat").onkeydown=e=>{if(e.key==="Enter")$("src-add").click()};
  }
  if($("src-go"))$("src-go").onclick=()=>{$("src-go").disabled=true;$("src-go").innerHTML=ico("refresh")+" Gathering…";

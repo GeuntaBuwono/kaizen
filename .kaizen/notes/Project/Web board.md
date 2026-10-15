@@ -27,6 +27,8 @@ updated: 2026-10-15
 - Commit & push stages the whole working tree, and runs commit the paths backticked in `03-impl.md` (`runGit()`; `.kaizen/memory.md`).
 - Card fields needing git go in `cardsGit` (`/state`), not `boardCards()` (`.kaizen/memory.md`).
 - A global `ul{display:flex}` in `board.html` hits lists in rendered markdown (`.kaizen/memory.md`).
+- Settings and the Icebox share one panel and fill it after a fetch: `openSettings()` / `openSources()` must keep the `pageGen` check (`go()` bumps it), or a slow answer paints one page under the other's title.
+- Settings and the Icebox are full width: `aside.docked` header and body pad 28px each side (16px under 900px), no centred column.
 
 ## Notes
 <!-- yours: /kaizen docs never rewrites this section -->
