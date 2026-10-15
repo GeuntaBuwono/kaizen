@@ -49,10 +49,11 @@ export async function current(url: string) {
 }
 
 // The newest kaizen on npm, asked at most every six hours; a failed ask is retried
-// on the next one. Same registry call as npmLatest() in install.ts, which exports nothing.
+// on the next one; fresh (Settings' Check for updates) skips the cache. Same registry
+// call as npmLatest() in install.ts, which exports nothing.
 let latest: { v: string | null; at: number } = { v: null, at: 0 };
-async function npmLatest() {
-  if (latest.v && Date.now() - latest.at < 6 * 3600_000) return latest.v;
+async function npmLatest(fresh = false) {
+  if (!fresh && latest.v && Date.now() - latest.at < 6 * 3600_000) return latest.v;
   try {
     const r = await fetch("https://registry.npmjs.org/kaizen-agent/latest", { signal: AbortSignal.timeout(10000) });
     const v = ((await r.json()) as { version?: string }).version ?? null;
@@ -461,7 +462,7 @@ export async function web(repoDir: string, opts: Opts = {}) {
 
       // What this board runs and what npm has: the page shows an Update button on a newer one.
       if (req.method === "GET" && path === "/version") {
-        const v = await npmLatest();
+        const v = await npmLatest(url.searchParams.has("fresh"));
         return json({ version: VERSION, latest: v, update: !!v && newer(v, VERSION) });
       }
 

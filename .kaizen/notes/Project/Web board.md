@@ -14,7 +14,7 @@ updated: 2026-10-15
 - `cli/state.ts` — everything kaizen knows about a project's `.kaizen/`, shared with the [[Terminal board]]: runs, cards, findings, backlog, git, launching agents.
 - `cli/pty.ts` + `web/term.ts` — the in-card terminal (agent runs inside the board). When that agent ends, the footer offers Resume: `/resume` continues an in-flight run with a prompt, and on a waiting or done run reopens its conversation with nothing sent (refused when none is on disk).
 - `web/board.html` — the page.
-- Update alert: `GET /version` (running vs npm `latest`, cached 6 h) puts a dot on the Settings menu item and an Update bar at the top of Settings; `POST /upgrade` runs `install.ts upgrade` in the server, then spawns a new board on the same port, which stops this one through the stale-board path in `web()`; the page reloads on the new boot id.
+- Update alert: `GET /version` (running vs npm `latest`, cached 6 h) puts a dot on the Settings menu item and an Update bar at the top of Settings; with no update known, that bar is a quiet row whose Check for updates asks `/version?fresh=1`, which skips the cache; `POST /upgrade` runs `install.ts upgrade` in the server, then spawns a new board on the same port, which stops this one through the stale-board path in `web()`; the page reloads on the new boot id.
 
 ## How it connects
 - [[Notebook]] is served from the same server (`/notebook`, `/vault`).

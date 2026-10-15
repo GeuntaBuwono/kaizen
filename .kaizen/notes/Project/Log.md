@@ -31,3 +31,4 @@ updated: 2026-10-15
 - 2026-10-15 update — Web board: page switch clears the stale body (run 2026-10-15-menu-stale-page)
 - 2026-10-15 release — 1.31.2 published to npm, GitHub Packages, GitHub release (page switch fix)
 - 2026-10-15 release — 1.31.3 published to npm, GitHub Packages, GitHub release (icebox rows on one line)
+- 2026-10-15 run 2026-10-15-settings-check-update — Web board (Check for updates in Settings)
