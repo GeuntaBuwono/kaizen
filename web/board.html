@@ -115,7 +115,7 @@ ul{list-style:none;margin:0;padding:4px 0 0;display:flex;flex-direction:column;g
 /* card, Linear grammar in our palette
      line 1  status icon · id (dim) · ⋯ menu on hover
      line 2  title, medium weight, wraps to 2 lines
-     line 3  chips, only when set
+     line 3  footer, only when set: project badge and word chips left, icon marks right
    Card ground is --bg-2 on a --bg column, lifted by --shadow-1. Actions never sit on the card. */
 .card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-s);padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;position:relative;box-shadow:var(--shadow-1);transition:border-color .12s,box-shadow .12s}
 .card:hover{border-color:color-mix(in srgb,var(--dim) 45%,var(--line));box-shadow:var(--shadow-2)}
@@ -141,8 +141,13 @@ section h2 .clear{margin-left:auto;min-height:22px;padding:0 8px}
 .card:hover .more,.card:focus-within .more,.card.menu .more{display:grid}
 .card:hover .age,.card.menu .age{display:none}
 .c-title{font-size:13px;font-weight:500;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--ink)}
-.c-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}
-.c-chips:empty{display:none}
+.c-foot{display:flex;align-items:center;gap:8px;margin-top:2px}
+.c-chips{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:0}
+.c-marks{display:flex;align-items:center;gap:6px;color:var(--dim);margin-left:auto}
+.mk{display:grid;place-items:center;font-size:11px;font-weight:500}
+.mk svg{width:13px;height:13px;stroke-width:1.7}
+.mk.accent{color:var(--accent)}.mk.ok{color:var(--ok)}.mk.warn{color:var(--warn)}.mk.run{color:var(--run)}
+.chip.proj{color:var(--ink);background:color-mix(in srgb,var(--dim) 12%,transparent);box-shadow:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;overflow-wrap:normal}
 .chip{display:inline-flex;align-items:center;gap:5px;min-height:20px;padding:1px 8px;border-radius:11px;overflow-wrap:anywhere;font-size:11px;font-weight:500;color:var(--dim);box-shadow:inset 0 0 0 1px var(--line)}
 .chip i{width:6px;height:6px;border-radius:50%;background:var(--dim)}
 .chip svg{width:11px;height:11px;stroke-width:1.7}
@@ -639,21 +644,22 @@ async function post(path,body){let r;try{r=await fetch(path,{method:"POST",heade
 function card(c){
  const k=key(c),el=document.createElement("div");el.className="card"+(k===openKey?" open":"")+(k===menuKey?" menu":"")+(c.archived?" archived":"");el.tabIndex=0;el.dataset.k=k;el.setAttribute("role","button");
  const st=ICON[c.status]||"idea",idt=c.kind==="idea"?"idea":c.text;
- const chips=[];
- if(c.status==="waiting")chips.push(`<span class="chip warn"><i></i>${esc(need(c.awaiting)||"needs you")}</span>`);
- else if(c.status==="running")chips.push(`<span class="chip run"><i></i>running</span>`);
- if(c.pty&&c.pty.alive)chips.push(`<span class="chip run" title="The agent is running in this card: open it, terminal button at the top">in card</span>`);
- if(all)chips.push(`<span class="chip">${esc(c.where)}</span>`);
- chips.push(...(c.tags||[]).map(t=>{const mark=MARKS[t]?`<svg><use href="#c-${t}"/></svg>`:"";return `<span class="chip${t==="full"||t==="lite"?" accent":t==="yolo"?" warn":""}"${t==="yolo"?' title="Started in Yolo: the agent runs commands without asking"':""}>${mark}${esc(NAMES[t]||t)}</span>`}));
+ // The status icon carries the state; what a waiting run needs is its tooltip.
+ const sttl=c.status==="waiting"?need(c.awaiting)||"needs you":c.status||"idea";
+ // Footer: words on the left (project, what it needs), icon-only marks on the right.
+ const chips=[],marks=[],mk=(id,t,cls="")=>`<span class="mk${cls}" role="img" title="${esc(t)}" aria-label="${esc(t)}"><svg><use href="#${id}"/></svg></span>`;
+ if(all){const n=c.where.split("/").filter(Boolean).pop()||c.where;chips.push(`<span class="chip proj" title="${esc(c.where)}">${esc(n)}</span>`)}
+ for(const t of c.tags||[]){if(MARKS[t])marks.push(mk("c-"+t,t==="full"?"Full run: separate reviewer":t==="lite"?"Lite run: one session":NAMES[t]||t,t==="full"||t==="lite"?" accent":""));else if(t==="yolo")marks.push(`<span class="mk warn" title="Started in Yolo: the agent runs commands without asking">yolo</span>`);else chips.push(`<span class="chip">${esc(NAMES[t]||t)}</span>`)}
+ if(c.pty&&c.pty.alive)marks.push(mk("i-term","The agent is running in this card: open it, terminal button at the top"," run"));
  // A gathered idea's notes open with the stamp promote() writes (ingest() wrote it before
  // the icebox); its chip names the source.
  const g=c.notes&&/^\[[^\]]*\] (?:Gathered from|Promoted from the icebox:) (.+?)\. Outside text/.exec(c.notes);if(g)chips.push(`<span class="chip" title="From ${esc(g[1])}">gathered</span>`);else if(c.notes)chips.push(`<span class="chip">notes</span>`);
  // Information only: the panel's button is where it is committed and pushed.
- if(c.git){const t=c.git==="pushed"?"Committed & pushed":"Not committed & pushed yet";chips.push(`<span class="chip ${c.git==="pushed"?"ok":"warn"}" role="img" title="${t}" aria-label="${t}"><svg><use href="#c-git"/></svg></span>`)}
+ if(c.git)marks.push(mk("c-git",c.git==="pushed"?"Committed & pushed":"Not committed & pushed yet",c.git==="pushed"?" ok":" warn"));
  const pick=picking&&!archive&&c.column===4;
- el.innerHTML=(pick?`<input type="checkbox" class="pick" ${picked.has(k)?"checked":""} aria-label="Select">`:"")+`<div class="c-id"><span class="st d-${st}"><svg><use href="#s-${st}"/></svg></span><span class="idt">${esc(idt)}</span><span class="age">${c.kind==="run"?age(c.moved||S.now,S.now):""}</span><button class="ib sm more" data-a="menu" title="Actions" aria-label="Actions" aria-haspopup="menu" aria-expanded="${k===menuKey}">${ico("more")}</button></div>
+ el.innerHTML=(pick?`<input type="checkbox" class="pick" ${picked.has(k)?"checked":""} aria-label="Select">`:"")+`<div class="c-id"><span class="st d-${st}" role="img" title="${esc(sttl)}" aria-label="${esc(sttl)}"><svg><use href="#s-${st}"/></svg></span><span class="idt">${esc(idt)}</span><span class="age">${c.kind==="run"?age(c.moved||S.now,S.now):""}</span><button class="ib sm more" data-a="menu" title="Actions" aria-label="Actions" aria-haspopup="menu" aria-expanded="${k===menuKey}">${ico("more")}</button></div>
   <div class="c-title"${c.kind==="idea"&&brief(c.text).parts.length?` title="${esc(c.text)}"`:""}>${esc(c.kind==="idea"?brief(c.text).head:(c.title||c.id))}</div>
-  <div class="c-chips">${chips.join("")}</div>`;
+  ${chips.length||marks.length?`<div class="c-foot"><span class="c-chips">${chips.join("")}</span><span class="c-marks">${marks.join("")}</span></div>`:""}`;
  if(k===menuKey){
   const items=[];
   if(archive){
@@ -932,7 +938,7 @@ async function openRun(c,refresh,again){
   foot.innerHTML=`<span class="note">${sent?"Sent to your agent.":APPROVAL[c.awaiting]+asks+" Answering here opens a new agent session."}</span><details class="more"><summary class="btn ghost">More</summary><div class="menu-pop">${more}</div></details><span class="dec"><button class="btn" data-a="revise"${sent?" disabled":""}>Revise</button><button class="btn pri" data-a="approve"${sent?" disabled":""}>${c.awaiting==="findings"?"Approve as-is":"Approve"}</button></span>`}
  else if(c.status==="waiting")foot.innerHTML=`<span class="note">Waiting on you: ${esc(need(c.awaiting))}. Answer in the ${c.pty&&c.pty.alive?"terminal (button at the top)":"terminal running this run"}.</span>${arch}<button class="btn ghost" data-a="ab">Abandon</button>`;
  else if(c.status==="done"||c.status==="abandoned")foot.innerHTML=arch;
- else foot.innerHTML=`<span class="note">${c.pty&&!c.pty.alive?"Its agent ended before the stage finished. Resume continues it here.":c.status==="stalled"?"No progress for a while. Resume it, or abandon it.":c.pty?"Running here: terminal button at the top.":"Running in your agent."}</span>${arch}<button class="btn ghost" data-a="ab">Abandon run</button>${resumable(c)?`<button class="btn pri" data-a="resume">Resume</button>`:""}`;
+ else foot.innerHTML=`<span class="note">${c.pty&&!c.pty.alive?"Its agent ended before the stage finished. Resume continues it here.":c.status==="stalled"?"No progress for a while. Resume it, or abandon it.":c.pty?"":"Running in your agent."}</span>${arch}<button class="btn ghost" data-a="ab">Abandon run</button>${resumable(c)?`<button class="btn pri" data-a="resume">Resume</button>`:""}`;
  foot.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==="archive"||a==="restore"){toggleArchive(c,a==="archive");return}if(a==="push"){commitPush(c,"",b);return}if(a==="commit"){confirmCommit(c);return}if(a==="approve"){if(qs.length)confirmAnswers(c,qs);else decide(c,b);return}if(a==="revise"){confirmRevise(c);return}if(a==="resume"){resume(c,b);return}close();mode="reject";modeKey=key(c);render()})}
 // Answering an approval from the panel opens your agent on the run, told the decision and,
 // for a revise, the comment. Answered approvals are remembered outside the footer, which

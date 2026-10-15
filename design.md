@@ -228,21 +228,23 @@ Linear's grammar in our palette. Three lines, each optional after the first.
 ```
 ◔ web-board                       4m   ⋯
 web board from design.md
-[! needs approval] [lite]
+[kaizen]                           ◉ ✳ >_
 ```
 
 - Line 1 `.c-id`: status icon, run id in `--dim` (date prefix stripped; ideas read
   `idea`), age right in tabular digits. On hover the age is replaced by a `⋯` button.
 - Line 2 `.c-title`: `13px` weight 500 `--ink`, wraps to two lines then clips.
-- Line 3 `.c-chips`: chips, `20px` tall (taller only when a long project path wraps),
-  `11px` radius, outlined by a 1 px `--line` ring, no fill, `--dim` text. Colour lives only
-  in the chip's dot or mark (`--warn`, `--run`, `--accent`, `--ok`); a waiting or running
-  chip's text is `--ink`. A waiting chip says what is
-  needed in words (`plan needs your approval`), never the config key. A state chip first when the run is waiting (`--warn`) or running
-  (`--run`), then project when viewing all projects, then run kind (`full`/`lite` in
-  `--accent`), then agent (`--dim`). No chips, no line. A run whose panel offers commit
-  and push ends the line with a word-less git mark chip (`#c-git`): `--warn` while its work
-  is not committed and pushed, `--ok` once it is. It says which on hover and does nothing.
+- Line 3 `.c-foot`, the footer. No chips and no marks, no line.
+  - Left `.c-chips`, words: the project badge first when viewing all projects (the
+    folder name, full path on hover, `--ink` on a `--dim` 12 % fill, one line,
+    ellipsis), then `gathered`/`notes`. Chips are `20px` tall, `11px` radius, outlined
+    by a 1 px `--line` ring, no fill, `--dim` text. No state chip: the line 1 status
+    icon carries it, and a waiting run says what is needed in words on the icon's
+    hover (`plan needs your approval`), never the config key.
+  - Right `.c-marks`, icons only, 13 px, each named on hover: agent mark (`--dim`),
+    run kind `full`/`lite` (`--accent`), `#i-term` (`--run`) while the agent runs in
+    the card, the word `yolo` (`--warn`) for a Yolo start, and the git mark (`#c-git`):
+    `--warn` while the work is not committed and pushed, `--ok` once it is.
 
 ### Chip marks
 
