@@ -6,7 +6,7 @@ import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { safeName, listNotes, saveNote, renameNote, deleteNote, boardIndex, linksTo } from "./notes.ts";
 import { wikilinks, tags, resolve, safeUrl, tree, uncode, freshName, parseTable, boardLink, resolveRun, anchorWords } from "../web/notes-lib.ts";
-import { sourceHash, OUT } from "./build-web.ts";
+import { sourceHash, OUT, TERM_OUT } from "./build-web.ts";
 
 let state = "";
 beforeEach(() => { state = join(mkdtempSync(join(tmpdir(), "kaizen-notes-")), ".kaizen"); mkdirSync(state); });
@@ -229,7 +229,7 @@ test("the side menu is the board's on the notebook, line for line", () => {
   expect(syms("board.html").every(Boolean)).toBe(true);
 });
 
-test("web/notebook.js was built from the sources as they are (bun run build:web)", () => {
-  const first = readFileSync(OUT, "utf8").split("\n", 1)[0]!;
-  expect(first).toContain(`kaizen notebook ${sourceHash()} `);
+test("web/notebook.js and web/term.js were built from the sources as they are (bun run build:web)", () => {
+  expect(readFileSync(OUT, "utf8").split("\n", 1)[0]!).toContain(`kaizen notebook ${sourceHash()} `);
+  expect(readFileSync(TERM_OUT, "utf8").split("\n", 1)[0]!).toContain(`kaizen terminal ${sourceHash()} `);
 });

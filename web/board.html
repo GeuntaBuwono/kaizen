@@ -168,6 +168,8 @@ section h2 .clear{margin-left:auto;min-height:22px;padding:0 8px}
 .inl .row,.notes .row{display:flex;gap:6px;justify-content:flex-end}
 .notes{display:flex;flex-direction:column;gap:8px}
 #pbody img{max-width:100%;border-radius:var(--r-s)}
+/* the in-card agent: a wider panel, and the terminal filling its body */
+aside.wide{width:min(960px,100%)}#pbody .term{height:100%;min-height:320px;background:var(--bg);border-radius:var(--r-s)}#pbody .term .xterm{height:100%;padding:4px}#pbody .term .xterm-viewport{background:transparent!important}
 .desc{border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:14px}.desc h3{margin-top:14px}
 .chat{display:flex;flex-direction:column;gap:10px;margin:0 0 14px}.msg{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;background:var(--bg)}.msg time{display:block;font-size:11px;color:var(--dim);margin-bottom:4px}.msg p:last-child{margin-bottom:0}.msg img{max-width:100%;max-height:260px;border-radius:var(--r-s);display:block;margin:4px 0}
 .notes .tools{display:flex;gap:6px;align-items:center}.notes .tools span{flex:1;font-size:11px;color:var(--dim)}.notes .att{font-size:11px;color:var(--dim)}
@@ -192,7 +194,7 @@ section h2 .clear{margin-left:auto;min-height:22px;padding:0 8px}
 .scrim.on{display:block}
 aside{position:fixed;top:0;right:0;bottom:0;z-index:11;width:520px;max-width:100%;background:var(--bg-2);border-left:1px solid var(--line);box-shadow:var(--shadow-2);display:flex;flex-direction:column;transform:translateX(100%);visibility:hidden;transition:transform .18s,visibility .18s}
 aside.open{transform:none;visibility:visible}
-/* Settings and Sources are pages: the same panel, docked into the app column, its content in a centred column */
+/* Settings and the Icebox are pages: the same panel, docked into the app column, its content in a centred column */
 body.paged #board,body.paged .ftr,body.paged .hdr,body.paged .scrim{display:none}
 aside.docked{position:static;flex:1;min-height:0;width:auto;transform:none;visibility:visible;transition:none;box-shadow:none;border:0}
 aside.docked header,aside.docked .body{padding-inline:max(28px,calc((100% - 760px)/2))}
@@ -275,14 +277,46 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 .help p{margin:0 0 16px;color:var(--dim)}.help dl{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;align-items:center;margin:0}.help dt{display:flex;gap:6px;justify-content:flex-end}.help dd{margin:0}
 .help kbd{font:12px/1 ui-monospace,monospace;padding:4px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:var(--r-s);background:var(--bg);color:var(--ink-hi)}
 /* request sources: cards, status badges, top bar, and add-box */
-.src-topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);margin:14px 0 16px;gap:12px}
-.src-topbar .meta{display:flex;flex-direction:column;gap:2px}
-.src-topbar .count{font-size:13px;font-weight:600;color:var(--ink)}
-.src-topbar .sched{font-size:12px;color:var(--dim)}
-.src-topbar .sched a{color:var(--accent);text-decoration:none;cursor:pointer}
-.src-topbar .sched a:hover{text-decoration:underline}
-.src-topbar .btn{display:inline-flex;align-items:center;gap:6px}
-.src-topbar .btn svg{width:14px;height:14px}
+/* the icebox as an inbox: toolbar, filter chips, one row per request, bulk bar */
+.ice-bar{display:flex;align-items:center;gap:10px;margin:14px 0 10px}
+.ice-bar .count{font-size:13px;font-weight:600;color:var(--ink)}
+.ice-bar .end{flex:1}
+.ice-bar .btn,.ice-bulk .btn,.ice-ra .btn{display:inline-flex;align-items:center;gap:6px}
+.ice-bar .btn svg,.ice-bulk .btn svg,.ice-ra .btn svg{width:14px;height:14px}
+.ice-bar input,.ice-row input,.ice-bulk input{accent-color:var(--accent);width:15px;height:15px;margin:0;flex-shrink:0}
+.ice-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.ice-chip{font:inherit;font-size:12px;padding:3px 10px;border-radius:var(--r-pill);border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ice-chip:hover{color:var(--ink)}
+.ice-chip.on{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--ink)}
+.ice-bulk{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:6px 12px;margin:0 0 8px;border-radius:var(--r);background:color-mix(in srgb,var(--accent) 12%,var(--bg-2));font-size:13px;color:var(--ink)}
+.ice-bulk .end{flex:1}
+.ice-list{border:1px solid var(--line);border-radius:var(--r);background:var(--bg-2);overflow:hidden}
+.ice-list .ice-cat{margin:0;padding:6px 12px;background:var(--bg);font-size:11px;letter-spacing:.02em}
+.ice-list .ice-cat~.ice-cat,.ice-row,.ice-open{border-top:1px solid var(--line)}
+.ice-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:40px;padding:4px 8px 4px 12px;cursor:pointer}
+.ice-row:hover,.ice-row.cur{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.ice-row.cur{box-shadow:inset 2px 0 var(--accent)}
+.ice-row.sel{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.ice-t{font:inherit;font-size:13px;color:var(--ink);background:none;border:0;padding:6px 0;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ice-t[aria-expanded=true]{font-weight:600}
+.ice-src{font-size:11px;color:var(--dim);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ice-age{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:64px;text-align:right}
+.ice-ra{display:none;gap:2px;min-width:64px;justify-content:flex-end}
+.ice-ra .btn{padding:0 6px}
+.ice-row:hover .ice-age,.ice-row.cur .ice-age,.ice-row:focus-within .ice-age{display:none}
+.ice-row:hover .ice-ra,.ice-row.cur .ice-ra,.ice-row:focus-within .ice-ra{display:flex}
+.ice-open{display:grid;gap:8px;padding:6px 12px 12px 37px;background:color-mix(in srgb,var(--ink) 2%,transparent)}
+.ice-zero{padding:30px 16px;text-align:center;border:1px dashed var(--line);border-radius:var(--r)}
+.ice-zero h4{margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink)}
+.ice-zero p{margin:0;font-size:12px;color:var(--dim);line-height:1.5}
+.ice-keys{margin:8px 0 0;font-size:11px;color:var(--dim)}
+.ice-open .hint{font-size:12px;color:var(--dim)}
+.src-sec{margin-top:8px}
+.src-sec .sched{font-size:12px;color:var(--dim)}
+.src-sec .sched a{color:var(--accent);text-decoration:none;cursor:pointer}
+.src-sec .sched a:hover{text-decoration:underline}
+@media(hover:none){.ice-ra{display:flex}.ice-age{display:none}}
+@media(max-width:640px){.ice-src,.ice-keys{display:none}.ice-open{padding-left:12px}}
 .src-list{display:flex;flex-direction:column;gap:10px}
 .src-card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow-1);display:flex;flex-direction:column;gap:9px;transition:border-color .15s}
 .src-card:hover{border-color:color-mix(in srgb,var(--line) 70%,var(--ink))}
@@ -312,7 +346,6 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 .ice-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 0 4px}
 .ice-hd h3{margin:0;font-size:14px;font-weight:600;color:var(--ink)}
 .ice-cat{font-size:12px;font-weight:600;color:var(--dim);margin:14px 0 6px}
-.ice-text{font-size:13px;color:var(--ink);line-height:1.45;overflow-wrap:anywhere}
 .ice-form{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--line)}
 .ice-form .sel{width:100%;max-width:none}
 .ice-form textarea.sel{height:auto;min-height:64px;font:inherit;font-size:13px;resize:vertical}
@@ -339,6 +372,7 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 <svg style="display:none"><defs>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
 <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+<symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></symbol>
 <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1.4l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7M14 11a5 5 0 0 0-7.1-.4l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"/></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></symbol>
 <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></symbol>
@@ -384,7 +418,7 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 <span>█ █  █ █  █  █▄▄  █▄▄  █  █</span></pre><span class="mascot"></span></a><button class="ib" id="fold" aria-label="Collapse menu" title="Collapse menu"><svg><use href="#i-side"/></svg></button></div>
   <a class="it" href="/" data-view="board" title="Board"><svg><use href="#i-board"/></svg><span class="lbl">Board</span></a>
   <a class="it" href="/notebook" data-view="notes" title="Notes"><svg><use href="#i-note"/></svg><span class="lbl">Notes</span></a>
-  <a class="it" href="/?view=sources" data-view="sources" title="Request sources"><svg><use href="#i-link"/></svg><span class="lbl">Sources</span></a>
+  <a class="it" href="/?view=icebox" data-view="sources" title="Icebox: requests gathered from your sources"><svg><use href="#i-inbox"/></svg><span class="lbl">Icebox</span></a>
   <a class="it" href="/?view=settings" data-view="settings" title="Settings"><svg><use href="#i-gear"/></svg><span class="lbl">Settings</span></a>
   <span class="end"></span>
   <div class="theme" role="group" aria-label="Theme"><button data-t="light" title="Light theme"><svg><use href="#i-sun"/></svg><span class="lbl">Light</span></button><button data-t="dark" title="Dark theme"><svg><use href="#i-moon"/></svg><span class="lbl">Dark</span></button></div>
@@ -551,8 +585,10 @@ async function load(quiet){
  for(const c of S.cards){if(c.kind!=="run"||c.archived)continue;if(due(key(c),c.notice,c.status==="done",S.now))notifyUser(c.notice)}
  // A redraw under a form being typed in would reset its fields and its focus.
  if(!(quiet&&mode&&$("board").querySelector(".inl input")))render();
+ // Run on an idea closed the panel: open the card on its agent once the board knows the session.
+ if(wantTerm&&!openKey&&!mode){const n=S.cards.find(x=>key(x)===wantTerm&&x.pty);if(n){wantTerm=null;open(n);return}}
  if(openKey){const c=S.cards.find(x=>key(x)===openKey),ta=$("pbody").querySelector(".notes textarea");if(ta&&document.activeElement===ta)return;
-  if(!c){if(was&&was.kind==="idea")follow(was);return}if(runDoc)openRun(c,true,true);else if(c.kind==="idea")chat(c,c.notes,c.archived||c.status!=="idea")}}
+  if(!c){if(was&&was.kind==="idea")follow(was);return}if(runDoc)openRun(c,true,true);else if(c.kind==="idea")ideaBody(c)}}
 // An idea's card goes when its run starts. Follow it to that run rather than keep
 // offering "Run again": the newest run in its project whose request holds the idea's
 // text, the rule boardCards() retires it by. No such run: close the panel.
@@ -574,6 +610,7 @@ function card(c){
  const chips=[];
  if(c.status==="waiting")chips.push(`<span class="chip warn"><i></i>${esc(need(c.awaiting)||"needs you")}</span>`);
  else if(c.status==="running")chips.push(`<span class="chip run"><i></i>running</span>`);
+ if(c.pty&&c.pty.alive)chips.push(`<span class="chip run" title="The agent is running in this card: open it, Terminal tab">in card</span>`);
  if(all)chips.push(`<span class="chip">${esc(c.where)}</span>`);
  chips.push(...(c.tags||[]).map(t=>{const mark=MARKS[t]?`<svg><use href="#c-${t}"/></svg>`:"";return `<span class="chip${t==="full"||t==="lite"?" accent":t==="yolo"?" warn":""}"${t==="yolo"?' title="Started in Yolo: the agent runs commands without asking"':""}>${mark}${esc(NAMES[t]||t)}</span>`}));
  // A gathered idea's notes open with the stamp promote() writes (ingest() wrote it before
@@ -653,7 +690,7 @@ async function startRun(c,kind){
  const p=runPick&&runPick.k===key(c)?runPick:null;runPick=null;
  const yolo=!!(p&&p.yolo&&!$("run-yolo")?.hidden);
  const r=await post("/run",{dir:c.state,text:c.text,kind,agent:p?p.agent:undefined,yolo});
- if(r.ok)toast((kind==="full"?"Full":"Lite")+(yolo?" yolo":"")+" run opened in your terminal: "+via(r.agent));
+ if(r.ok){toast((kind==="full"?"Full":"Lite")+(yolo?" yolo":"")+" run "+where(r)+": "+via(r.agent));if(r.pty)wantTerm=key(c)}
  load()}
 
 function render(){
@@ -737,10 +774,12 @@ function open(c,keepTab){
  if(view!=="board")go("board",true);
  stopDictation(true); // the panel body is about to be replaced
  fixOff.clear();openKey=key(c);$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=c.kind==="idea"?brief(c.text).head:c.text;render();
- if(c.kind==="idea"){runDoc=null;$("psub").textContent="Idea · "+c.where;$("ptabs").innerHTML="";chat(c,c.notes,c.archived||c.status!=="idea");
-  const foot=$("pfoot");foot.innerHTML=c.archived?`<button class="btn pri" data-a="restore">Restore</button>`:c.status==="idea"?`<button class="btn ghost danger" data-a="delete">Delete</button><button class="btn ghost" data-a="archive">Archive</button><span class="dec"><button class="btn" data-a="reject">Reject</button><button class="btn" data-a="edit">Edit</button><button class="btn pri" data-a="run">Run</button></span>`:`<span class="note">Starting: a run was launched for this idea. No terminal with your agent? Run it again.</span><span class="dec"><button class="btn" data-a="run">Run again</button></span>`;
+ if(c.kind==="idea"){runDoc=null;$("psub").textContent="Idea · "+c.where;$("ptabs").innerHTML="";ideaBody(c);
+  const foot=$("pfoot");foot.innerHTML=c.archived?`<button class="btn pri" data-a="restore">Restore</button>`:c.status==="idea"?`<button class="btn ghost danger" data-a="delete">Delete</button><button class="btn ghost" data-a="archive">Archive</button><span class="dec"><button class="btn" data-a="reject">Reject</button><button class="btn" data-a="edit">Edit</button><button class="btn pri" data-a="run">Run</button></span>`:`<span class="note">${c.pty?"Starting: the agent runs below.":"Starting: a run was launched for this idea. No terminal with your agent? Run it again."}</span><span class="dec"><button class="btn" data-a="run">Run again</button></span>`;
   foot.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==="archive"||a==="restore"){toggleArchive(c,a==="archive");return}const k=key(c);close();mode=a;modeKey=k;render()});return}
  if(!keepTab)tab=tabOf(c.status==="abandoned"?"plan":({1:"plan",2:"backlog",3:"review",4:"preview"})[c.column]||"request");
+ // A run its agent is working on, in this board, opens on that agent.
+ if(!keepTab&&c.pty&&c.pty.alive&&c.status==="running")tab=TABS.length;
  openRun(c,false)}
 // Notes are a chat: one entry per message, files attached by paste or picker.
 function parseNotes(src){const out=[];for(const raw of (src||"").split("\n")){const m=/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s?(.*)$/.exec(raw);if(m){out.push({at:m[1],text:m[2]});continue}const last=out[out.length-1];if(last)last.text+="\n"+raw.replace(/^\s{2}/,"");else if(raw.trim())out.push({at:"",text:raw})}return out.map(n=>({...n,text:n.text.trim()})).filter(n=>n.text)}
@@ -799,19 +838,42 @@ function showProgress(c){
 // again: something changed on the server, so the doc is read afresh: a note sent, a plan
 // written or a commit made elsewhere shows in nothing the page already holds. One /run
 // fetch per change while a run panel is open; a tab switch reuses the doc.
+// ---- the in-card agent (agent.launch: card). xterm.js is loaded the first time a
+// terminal is shown. One terminal is mounted at a time, in #pbody; a refresh that
+// finds it already showing this session leaves it alone, so it never reconnects.
+let wantTerm=null,termKey=null,termOff=null,termLib=null;
+const where=r=>r.pty?"running in its card":"opened in your terminal";
+const termLoad=()=>termLib||=new Promise((ok,no)=>{const l=document.createElement("link");l.rel="stylesheet";l.href="/term.css";document.head.append(l);const sc=document.createElement("script");sc.src="/term.js";sc.onload=()=>ok(window.kzTerm);sc.onerror=()=>{termLib=null;no()};document.head.append(sc)});
+function termStop(){if(termOff)termOff();termOff=null;termKey=null;$("panel").classList.remove("wide")}
+async function showTerm(c){const k=c.pty.key;if(termKey===k&&$("pbody").querySelector(".term"))return;
+ termStop();termKey=k;$("panel").classList.add("wide");$("pbody").innerHTML=`<div class="term" aria-label="Agent terminal"></div>`;
+ let mount;try{mount=await termLoad()}catch{$("pbody").innerHTML=`<p style="color:var(--dim)">The terminal could not load.</p>`;return}
+ if(termKey!==k)return;termOff=mount($("pbody").querySelector(".term"),k,()=>load(true))}
+// An idea's panel: its terminal while the run it started is being born there, else its notes.
+function ideaBody(c){if(c.pty)showTerm(c);else{termStop();chat(c,c.notes,c.archived||c.status!=="idea")}}
 async function openRun(c,refresh,again){
  if(!refresh||!runDoc||runDoc.id!==c.id||again){const d=await fetch(`/run/${encodeURIComponent(c.id)}?dir=${encodeURIComponent(c.state)}`).then(r=>r.json());
   // A file list being confirmed, or a push under way, keeps the doc it was drawn from.
   if(refresh&&$("pfoot").querySelector(".inl,[data-busy],.more[open]"))return;runDoc=d}
  if(openKey!==key(c))return;
+ // The fetch above may have finished after a newer /state: draw the card as it is now
+ // (a resumed agent's terminal, not the one that ended).
+ c=S.cards.find(x=>key(x)===openKey)||c;
  // A refresh while notes are being typed would wipe the textarea.
- const ta=$("pbody").querySelector("textarea");if(refresh&&ta&&document.activeElement===ta)return;
+ const ta=$("pbody").querySelector(".notes textarea");if(refresh&&ta&&document.activeElement===ta)return;
  $("psub").textContent=c.id+" · "+(WORD[c.status]||c.status)+(c.awaiting?" · "+need(c.awaiting):"");
- const tabs=TABS;
+ // A card whose agent runs in the board gets its terminal as one more tab, chosen once
+ // right after a launch from here.
+ const tabs=c.pty?[...TABS,["Terminal","term"]]:TABS;
+ if(c.pty&&wantTerm===key(c)){wantTerm=null;tab=TABS.length}
+ if(tab>=tabs.length)tab=0;
+ $("panel").classList.toggle("wide",tabs[tab][1]==="term");
  $("ptabs").innerHTML=tabs.map((t,i)=>`<button class="${i===tab?"on":""}" data-i="${i}">${t[0]}</button>`).join("");
  [...$("ptabs").children].forEach(b=>b.onclick=()=>{tab=+b.dataset.i;openRun(c,true)});
  const k=tabs[tab][1],doc=k==="preview"?(preview(runDoc.impl)&&attach(preview(runDoc.impl),c)):runDoc[k];
- if(k==="notes"){const ro=c.archived||c.status==="done"||c.status==="abandoned";
+ if(k!=="term")termStop();
+ if(k==="term")showTerm(c);
+ else if(k==="notes"){const ro=c.archived||c.status==="done"||c.status==="abandoned";
   chat(c,doc,ro);}
  else $("pbody").innerHTML=doc?md(doc,k==="backlog"):`<p style="color:var(--dim)">No ${({request:"request",plan:"plan",impl:"work report",preview:"preview",review:"review",backlog:"backlog"})[k]} yet.</p>`;
  if(k==="backlog")showProgress(c);
@@ -832,21 +894,29 @@ async function openRun(c,refresh,again){
   // gitBtn's buttons restyled as menu rows.
   const more=gitBtn(c).replace(/class="btn( pri)?"/g,"")+`<button data-a="archive">Archive</button><hr><button data-a="ab" class="danger">Abandon</button>`;
   foot.innerHTML=`<span class="note">${sent?"Sent to your agent.":APPROVAL[c.awaiting]+asks+" Answering here opens a new agent session."}</span><details class="more"><summary class="btn ghost">More</summary><div class="menu-pop">${more}</div></details><span class="dec"><button class="btn" data-a="revise"${sent?" disabled":""}>Revise</button><button class="btn pri" data-a="approve"${sent?" disabled":""}>${c.awaiting==="findings"?"Approve as-is":"Approve"}</button></span>`}
- else if(c.status==="waiting")foot.innerHTML=`<span class="note">Waiting on you: ${esc(need(c.awaiting))}. Answer in the terminal running this run.</span>${arch}<button class="btn ghost" data-a="ab">Abandon</button>`;
+ else if(c.status==="waiting")foot.innerHTML=`<span class="note">Waiting on you: ${esc(need(c.awaiting))}. Answer in the ${c.pty&&c.pty.alive?"Terminal tab":"terminal running this run"}.</span>${arch}<button class="btn ghost" data-a="ab">Abandon</button>`;
  else if(c.status==="done"||c.status==="abandoned")foot.innerHTML=arch;
- else foot.innerHTML=`<span class="note">${c.status==="stalled"?"No progress for a while. Resume it with <code>/kaizen run</code> in your agent, or abandon it.":"Running in your agent."}</span>${arch}<button class="btn ghost" data-a="ab">Abandon run</button>`;
- foot.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==="archive"||a==="restore"){toggleArchive(c,a==="archive");return}if(a==="push"){commitPush(c,"",b);return}if(a==="commit"){confirmCommit(c);return}if(a==="approve"){if(qs.length)confirmAnswers(c,qs);else decide(c,b);return}if(a==="revise"){confirmRevise(c);return}close();mode="reject";modeKey=key(c);render()})}
+ else foot.innerHTML=`<span class="note">${c.pty&&!c.pty.alive?"Its agent ended before the stage finished. Resume continues it here.":c.status==="stalled"?"No progress for a while. Resume it, or abandon it.":c.pty?"Running here: Terminal tab.":"Running in your agent."}</span>${arch}<button class="btn ghost" data-a="ab">Abandon run</button>${resumable(c)?`<button class="btn pri" data-a="resume">Resume</button>`:""}`;
+ foot.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==="archive"||a==="restore"){toggleArchive(c,a==="archive");return}if(a==="push"){commitPush(c,"",b);return}if(a==="commit"){confirmCommit(c);return}if(a==="approve"){if(qs.length)confirmAnswers(c,qs);else decide(c,b);return}if(a==="revise"){confirmRevise(c);return}if(a==="resume"){resume(c,b);return}close();mode="reject";modeKey=key(c);render()})}
 // Answering an approval from the panel opens your agent on the run, told the decision and,
 // for a revise, the comment. Answered approvals are remembered outside the footer, which
 // every refresh rebuilds, so a second press cannot open a second agent. Keyed by when the
 // run last moved: the same approval reached again after a revise is a new question.
 // The footer's More menu is a <details>: close it on a click anywhere else.
 document.addEventListener("click",e=>{for(const d of document.querySelectorAll(".more[open]"))if(!d.contains(e.target))d.open=false});
+// Resume: a run whose in-card agent ended, or one stalled with no progress, gets its agent
+// back on the run (its conversation, where the tool can resume one), in its card.
+const resumable=c=>c.status==="stalled"||!!(c.pty&&!c.pty.alive);
+async function resume(c,b){b.disabled=true;askNotify();const r=await post("/resume",{dir:c.state,id:c.id});
+ if(!r.ok){b.disabled=false;return}
+ toast("Resumed, "+where(r)+": "+via(r.agent));if(r.pty)wantTerm=key(c);
+ if(openKey===key(c)){$("pfoot").innerHTML="";openRun(c,true)}}
 const APPROVAL={"approvals.plan":"The plan is ready. Read it in the Plan tab, then approve or send it back.","approvals.review":"The work is ready to check. Approve to finish it, or revise with what to change.","findings":"The review has open findings. Approve as-is to accept them and finish, or fix selected findings first."},decided=new Set(),answer=c=>key(c)+":"+c.awaiting+":"+c.moved;
 async function decide(c,b,why,answers){b.disabled=true;askNotify();const r=await post("/decide",{dir:c.state,id:c.id,awaiting:c.awaiting,...(why===undefined?{}:{why}),...(answers?{answers}:{})});
  // A failed send keeps the footer, and with it a typed comment.
  if(!r.ok){b.disabled=false;return}
- decided.add(answer(c));toast((why===undefined?"Approved":"Sent back")+" in your terminal: "+via(r.agent));
+ decided.add(answer(c));toast((why===undefined?"Approved":"Sent back")+", "+where(r)+": "+via(r.agent));
+ if(r.pty)wantTerm=key(c);
  if(openKey===key(c)){$("pfoot").innerHTML="";openRun(c,true)}}
 function confirmRevise(c){const foot=$("pfoot"),plan=c.awaiting==="approvals.plan";
  foot.innerHTML=`<div class="inl" style="flex:1"><div class="q">${plan?"What should the plan do differently?":"What should change in the work?"}</div><div class="q dim">Opens your agent on this run with your comment.${plan?" It revises the plan and comes back here for approval.":" It changes the work, rechecks it and comes back here."}</div><textarea aria-label="Revise comment"></textarea><div class="row"><button class="btn ghost" data-a="c">Cancel</button><button class="btn pri" data-a="s">Send back</button></div></div>`;
@@ -895,7 +965,7 @@ function fixForm(c){const k=n=>c.id+":"+n,sent=f=>fixSent.has(k(f.n)),fs=runDoc.
  allb.onclick=()=>{const none=picks().length===open.length;open.forEach(f=>none?fixOff.add(k(f.n)):fixOff.delete(k(f.n)));sync()};
  go.onclick=async()=>{const nums=picks();go.disabled=true;askNotify();const r=await post("/fix",{dir:c.state,id:c.id,nums});
   // Sent findings lock as sent, so a second press cannot open a second agent on them.
-  if(r.ok){toast("Fixing "+nums.length+" finding"+(nums.length===1?"":"s")+" in your terminal: "+via(r.agent));nums.forEach(n=>fixSent.add(k(n)));try{sessionStorage.setItem(SK,JSON.stringify([...fixSent]))}catch(e){}openRun(c,true)}else sync()};
+  if(r.ok){toast("Fixing "+nums.length+" finding"+(nums.length===1?"":"s")+", "+where(r)+": "+via(r.agent));if(r.pty)wantTerm=key(c);nums.forEach(n=>fixSent.add(k(n)));try{sessionStorage.setItem(SK,JSON.stringify([...fixSent]))}catch(e){}openRun(c,true)}else sync()};
  sync();$("pbody").appendChild(el)}
 // Commit and push, for a finished run in a project with a git remote. What the board
 // did is recorded per run, so the settled label outlives later changes to the tree.
@@ -922,7 +992,7 @@ async function commitPush(c,message,b){b.disabled=true;b.dataset.busy=1;b.textCo
  // A refused message comes back for another try, beside the current file list.
  if(!r.ok&&message&&openKey===key(c)&&runDoc.git.files&&runDoc.git.files.length)confirmCommit(c,message)}
 async function toggleArchive(c,archived){const r=await post("/archive",c.kind==="idea"?{dir:c.state,text:c.text,archived}:{dir:c.state,id:c.id,archived});if(r.ok)toast(archived?"Archived":"Restored");close();load()}
-function close(){if(view!=="board")return;const k=openKey;stopDictation(true);openKey=null;runDoc=null;$("panel").classList.remove("open");$("scrim").classList.remove("on");render();if(k)cardEl(k)?.focus({preventScroll:true})}
+function close(){if(view!=="board")return;const k=openKey;stopDictation(true);termStop();openKey=null;runDoc=null;$("panel").classList.remove("open");$("scrim").classList.remove("on");render();if(k)cardEl(k)?.focus({preventScroll:true})}
 $("pclose").onclick=close;$("scrim").onclick=close;
 // An idea is one inbox line, so a structured request arrives as one wall:
 // "Fix x Problem: … Scope: … Acceptance criteria: (1) … (2) …". Split it, for display
@@ -972,7 +1042,7 @@ const groups=rows=>{const m=new Map();for(const r of rows){if(!m.has(r.group))m.
 let setQ="";
 async function openSettings(){
  stopDictation(true);
- openKey=null;runDoc=null;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent="Settings";$("ptabs").innerHTML="";$("pfoot").innerHTML="";
+ termStop();openKey=null;runDoc=null;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent="Settings";$("ptabs").innerHTML="";$("pfoot").innerHTML="";
  const cur=document.documentElement.dataset.theme||"system";
  const cfg=await fetch("/settings").then(r=>r.json()).catch(()=>null);
  $("psub").textContent="Theme applies to this browser. Everything else is saved to your kaizen settings.";$("psub").title=cfg?cfg.file:"";
@@ -1013,11 +1083,11 @@ async function openSettings(){
   if(el.tagName==="SELECT"||el.tagName==="INPUT")el.onchange=async()=>{await save(el.value.trim());if(el.tagName==="INPUT")load()};else el.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>save(b.dataset.v));if(el.matches(".chk"))el.onclick=()=>save(el.dataset.v);
   // The system's own folder dialog, opened by the board: a page cannot read a real path.
   if(r.folder)$(el.id+"-pick").onclick=async()=>{const j=await post("/pick-folder",{});if(j.path){await save(j.path);load()}}})}
-// ---- views: the board, or Settings and Sources as pages in the docked panel, each with its own address
+// ---- views: the board, or Settings and the Icebox as pages in the docked panel, each with its own address
 let view="board";
 const markView=v=>document.querySelectorAll(".rail a.it").forEach(a=>a.dataset.view===v?a.setAttribute("aria-current","page"):a.removeAttribute("aria-current"));
-function go(v,push){if(!["settings","sources"].includes(v))v="board";const was=view;view=v;markView(v);document.body.classList.toggle("paged",v!=="board");
- if(push&&v!==was)history.pushState(null,"",v==="board"?location.pathname:"?view="+v);
+function go(v,push){if(v==="icebox")v="sources";if(!["settings","sources"].includes(v))v="board";const was=view;view=v;markView(v);document.body.classList.toggle("paged",v!=="board");
+ if(push&&v!==was)history.pushState(null,"",v==="board"?location.pathname:"?view="+(v==="sources"?"icebox":v));
  const p=$("panel");
  if(v==="board"){if(was==="board")return;
   // Undocked without the slide: it was a page, not a drawer leaving.
@@ -1028,12 +1098,15 @@ document.querySelector(".rail .home").onclick=e=>{if(e.ctrlKey||e.metaKey||e.shi
 addEventListener("popstate",()=>go(new URLSearchParams(location.search).get("view")));
 // The menu's theme switch while Settings shows: its Theme row follows.
 addEventListener("kz-theme",()=>{if(view==="settings")openSettings()});
-// ---- request sources: links kaizen reads for new requests, held in the icebox
-// until someone promotes them to ideas. Same panel as settings.
-const SRC="Request sources";
-// The icebox item whose promote form is open, as "<dir> <id>"; it survives the page
-// rebuilding on every server change.
-let iceForm=null;
+// ---- the icebox: requests gathered from request sources, read like an inbox, until
+// someone promotes them to ideas or dismisses them. The sources themselves sit in a
+// section below, folded. Same panel as settings.
+const SRC="Icebox";
+// What the page keeps across the rebuild every server change brings: the item whose
+// promote form is open and the one the cursor is on (both "<dir> <id>"), the checked
+// items, the source filter ("<dir> <url>"), whether the sources section is open, and
+// whether a bulk action is still posting.
+let iceForm=null,iceCur=null,iceSrc="",srcShow=false,iceBusy=false,iceNav=null;const iceSel=new Set();
 const srcOpen=()=>$("panel").classList.contains("open")&&$("ptitle").textContent===SRC;
 const ago=at=>{const m=Math.round((Date.now()-Date.parse(at))/60000);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" d ago"};
 async function openSources(){
@@ -1042,12 +1115,14 @@ async function openSources(){
  const typed=srcOpen()?[$("src-url")?.value||"",$("src-label")?.value||"",document.activeElement?.id,$("src-dir")?.value,$("src-cat")?.value||""]:["",""];
  // So does a project picked on a row but not yet moved.
  const picked=new Map(srcOpen()?[...$("pbody").querySelectorAll("[data-mv]")].map(m=>[m.dataset.k,m.value]):[]);
- // And a promote form half filled.
- const iceDraft=srcOpen()&&$("ice-title")?[$("ice-title").value,$("ice-details").value]:null;
+ // And a promote form half filled, for the item it was typed on.
+ // And which control of which inbox row had focus, by item key: row indices shift when a row goes.
+ const fRow=srcOpen()&&document.activeElement?.closest?.(".ice-row"),fPick=fRow?[fRow.dataset.k,document.activeElement.id.replace(/-\d+$/,"")]:null;
+ const iceDraft=srcOpen()&&$("ice-title")?[$("ice-title").dataset.k,$("ice-title").value,$("ice-details").value]:null;
  // And a category typed on a row but not yet saved.
  const cats=new Map(srcOpen()?[...$("pbody").querySelectorAll("[data-ct]")].map(m=>[m.dataset.k,m.value]):[]);
- openKey=null;runDoc=null;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=SRC;$("ptabs").innerHTML="";$("pfoot").innerHTML="";
- $("psub").textContent="Links kaizen checks for new requests. What it finds waits in the icebox until you promote it to Ideas; nothing starts on its own.";$("psub").title="";
+ termStop();openKey=null;runDoc=null;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=SRC;$("ptabs").innerHTML="";$("pfoot").innerHTML="";
+ $("psub").textContent="Requests gathered from your sources wait here until you promote them to Ideas or dismiss them; nothing starts on its own.";$("psub").title="";
  const dir=all?null:S.dir,q=dir?"?dir="+encodeURIComponent(dir):"";
  const d=await fetch("/sources"+q).then(r=>r.json()).catch(()=>null);
  if(!srcOpen())return;
@@ -1058,28 +1133,47 @@ async function openSources(){
  // changes on every arrow key, and each change would have moved the source. The names are the picker's;
  // a row whose project the picker does not list still gets its own, selected, so Move never points elsewhere.
  const opts=(on,name)=>(on&&!S.projects.some(p=>p.dir===on)?`<option value="${esc(on)}" selected>${esc(name||on)}</option>`:"")+S.projects.map(p=>`<option value="${esc(p.dir)}"${p.dir===on?" selected":""}>${esc(p.label)}</option>`).join("");
- const topBar=`<div class="src-topbar"><div class="meta"><span class="count">${list.length} source${list.length===1?"":"s"}${dir?` in ${esc(S.projects.find(p=>p.dir===dir)?.label||dir)}`:""}</span><span class="sched">${d&&d.every&&d.every!=="off"?`Auto-check: every ${esc(d.every)}`:"Auto-check: off"} · <a id="src-to-settings" role="button" tabindex="0">Settings</a></span></div><button class="btn sm" id="src-go"${list.length?"":" disabled"}>${ico("refresh")} Gather all</button></div>`;
  const cards=list.map((s,i)=>{
   const st=srcType(s.url),title=s.label||host(s.url);
   const statusHtml=!s.last?`<span class="src-badge dim">Not gathered yet</span>`:s.last.ok?`<span class="src-badge ok"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-6" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`:`<span class="src-badge warn"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none" stroke-width="1.8"/><path d="M8 5v3.5M8 11v.1" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"/></svg>Failed: ${esc(s.last.note)}</span><span class="hint" style="margin:0">${ago(s.last.at)}</span>`;
   return `<div class="src-card" id="src-card-${i}"><div class="src-hd"><div class="src-info"><span class="src-ico" title="${st}">${ico(st==="sheet"?"sheet":st==="doc"?"doc":"link")}</span><span class="src-title" title="${esc(title)}">${esc(title)}</span></div><div class="src-acts"><button class="btn ghost sm" id="src-chk-${i}" data-chk="${i}" aria-label="Check ${esc(title)} now" title="Check this source now">${ico("refresh")} Check</button><button class="btn ghost danger sm" id="src-rm-${i}" data-rm="${i}" aria-label="Remove ${esc(title)}" title="Remove source">${ico("trash")}</button></div></div><div class="src-url"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" title="${esc(s.url)}"><span>${esc(s.url)}</span>${ico("ext")}</a></div><div class="src-status">${statusHtml}</div><div class="src-dest"><span>Category</span><input class="sel" id="src-ct-${i}" data-ct="${i}" data-k="${esc(s.dir+" "+s.url)}" value="${esc(s.category||"")}" placeholder="e.g. Feedback" maxlength="40" aria-label="Category of ${esc(title)}"><button class="btn sm" id="src-cs-${i}" aria-label="Save the category of ${esc(title)}" disabled>Save</button></div><div class="src-dest"><span>Project</span><select class="sel" id="src-mv-${i}" data-mv="${i}" data-k="${esc(s.dir+" "+s.url)}" aria-label="Project of ${esc(title)}">${opts(s.dir,s.project)}</select><button class="btn sm" id="src-mb-${i}" aria-label="Move ${esc(title)} to the chosen project" disabled>Move</button></div></div>`;
- }).join("")+(d&&d.failed||[]).map(f=>`<p style="color:var(--dim)">The sources of ${esc(f)} could not be read.</p>`).join("");
+ }).join("");
+ const fails=(d&&d.failed||[]).map(f=>`<p style="color:var(--dim)">The sources of ${esc(f)} could not be read.</p>`).join("");
  const emptyState=`<div class="src-empty"><div class="src-empty-ico">${ico("link")}</div><h4>No request sources yet</h4><p>Connect shared links to gather requests into the icebox, where you choose which become ideas. Nothing runs automatically until you start it.</p><div class="src-empty-grid"><div class="src-empty-item"><strong>Google Sheets</strong>Public sheets with idea or task rows. Rows marked Done are skipped.</div><div class="src-empty-item"><strong>Google Docs</strong>Shared public docs with items or notes written line by line.</div><div class="src-empty-item"><strong>Public links</strong>TSV, CSV, or raw text links containing requests.</div></div></div>`;
  const addBox=`<div class="src-add-box"><h3>${ico("plus")} Add a source</h3><div style="display:grid;gap:8px"><div><label for="src-url" class="hint" style="display:block;margin-bottom:4px;font-weight:500;color:var(--ink)">Link</label><input class="sel" id="src-url" aria-label="Link" placeholder="https://docs.google.com/spreadsheets/d/… or public URL" spellcheck="false" autocomplete="off" style="width:100%;max-width:none"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><div><label for="src-label" class="hint" style="display:block;margin-bottom:4px">Label (optional)</label><input class="sel" id="src-label" aria-label="Label (optional)" placeholder="e.g. Feedback Q4" style="width:100%;max-width:none"></div><div><label for="src-cat" class="hint" style="display:block;margin-bottom:4px">Category (optional)</label><input class="sel" id="src-cat" aria-label="Category (optional)" placeholder="e.g. Bugs" maxlength="40" style="width:100%;max-width:none"></div><div><label for="src-dir" class="hint" style="display:block;margin-bottom:4px">Target project</label><select class="sel" id="src-dir" aria-label="Project this source belongs to" style="width:100%;max-width:none">${dir?"":`<option value="">Choose project…</option>`}${opts(dir)}</select></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><button class="btn pri" id="src-add">Add source</button><span class="hint" style="font-size:11px;color:var(--dim);margin:0">Public links only. For private docs, run /kaizen gather.</span></div></div></div>`;
- // The icebox: what was gathered, by project when showing all, then by category.
- // Promote makes it an idea with the item's own words; editing it is the idea's business.
+ // The inbox: one row per request, by project when showing all, then by category,
+ // narrowed to one source by its chip. Checked, open and cursor items are kept by key.
  const srcName=it=>{const s=list.find(x=>x.dir===it.dir&&x.url===it.source);return s?s.label||host(s.url):host(it.source)};
- const groups=new Map();ice.forEach((it,i)=>{const k=(dir?"":(it.project||it.dir)+" · ")+(it.category||"Uncategorised");groups.has(k)||groups.set(k,[]);groups.get(k).push(i)});
- // Promote opens a form on the item: a clean title for the idea's card and the person's
- // own details; what was gathered is added to the idea's notes by the server.
- const iceKey=it=>it.dir+" "+it.id;
- const form=it=>`<div class="ice-form"><label for="ice-title" class="hint" style="margin:0">Idea title</label><input class="sel" id="ice-title" maxlength="200" value="${esc(it.text)}" aria-label="Idea title"><label for="ice-details" class="hint" style="margin:0">Details (optional)</label><textarea class="sel" id="ice-details" rows="3" placeholder="In your own words: what is needed, for whom, why" aria-label="Details (optional)"></textarea><div class="ice-form-acts"><span class="hint">What was gathered is added to the idea's notes.</span><button class="btn ghost sm" id="ice-cancel">Cancel</button><button class="btn pri sm" id="ice-ok">Promote</button></div></div>`;
- const iceItem=i=>{const it=ice[i];return `<div class="src-card" id="ice-${i}"><div class="ice-text">${esc(it.text)}</div>${it.notes?`<div class="ice-notes">${esc(it.notes)}</div>`:""}`+(iceForm===iceKey(it)?form(it)+`</div>`:`<div class="src-dest"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">From ${esc(srcName(it))} · ${ago(it.at)}</span><button class="btn sm" id="ice-pr-${i}" data-pr="${i}" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")} Promote</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" aria-label="Dismiss: ${esc(it.text)}">${ico("x")} Dismiss</button></div></div>`)};
- const icebox=`<div class="ice-hd"><h3>Icebox</h3><span class="hint" style="margin:0">${ice.length} waiting</span></div>`+(ice.length?[...groups].map(([k,ix])=>`<div class="ice-cat">${esc(k)} · ${ix.length}</div><div class="src-list">${ix.map(iceItem).join("")}</div>`).join(""):`<p class="hint" style="font-size:12px">Nothing in the icebox. Gathered requests wait here until you promote them to Ideas or dismiss them; /kaizen discover asks an agent to sort them for you.</p>`);
- $("pbody").innerHTML=(d&&d.error?`<p style="color:var(--dim)">${esc(d.error)}</p>`:!d?`<p style="color:var(--dim)">Sources could not be read.</p>`:topBar+(list.length?`<div class="src-list">${cards}</div>`:emptyState)+icebox)+addBox;
- if(iceDraft&&$("ice-title")){$("ice-title").value=iceDraft[0];$("ice-details").value=iceDraft[1]}
- $("src-url").value=typed[0];$("src-label").value=typed[1];$("src-cat").value=typed[4]||"";if(typed[3]!==undefined&&$("src-dir"))$("src-dir").value=typed[3];
+ const iceKey=it=>it.dir+" "+it.id,srcKey=it=>it.dir+" "+it.source;
+ const bySrc=new Map();ice.forEach(it=>bySrc.set(srcKey(it),{it,n:(bySrc.get(srcKey(it))?.n||0)+1}));
+ if(iceSrc&&!bySrc.has(iceSrc))iceSrc="";
+ const keys=new Set(ice.map(iceKey));[...iceSel].forEach(k=>keys.has(k)||iceSel.delete(k));
+ if(iceForm&&!keys.has(iceForm))iceForm=null;
+ const groups=new Map();ice.forEach((it,i)=>{if(iceSrc&&srcKey(it)!==iceSrc)return;const k=(dir?"":(it.project||it.dir)+" · ")+(it.category||"Uncategorised");groups.has(k)||groups.set(k,[]);groups.get(k).push(i)});
+ // Rows in the order they are drawn, which is the order j and k walk.
+ const order=[...groups.values()].flat();
+ if(!order.some(i=>iceKey(ice[i])===iceCur))iceCur=order.length?iceKey(ice[order[0]]):null;
+ const nSel=order.filter(i=>iceSel.has(iceKey(ice[i]))).length;
+ const chips=bySrc.size>1?`<div class="ice-chips" role="group" aria-label="Show requests from">${[["",{n:ice.length}],...bySrc].map(([k,{it,n}],j)=>`<button class="ice-chip${iceSrc===k?" on":""}" id="ice-f-${j}" data-sf="${esc(k)}" aria-pressed="${iceSrc===k}">${esc(k?srcName(it):"All")} · ${n}</button>`).join("")}</div>`:"";
+ const bar=`<div class="ice-bar">${order.length?`<input type="checkbox" id="ice-all" aria-label="Select every request shown"${nSel&&nSel===order.length?" checked":""}>`:""}<span class="count">${ice.length} waiting</span><span class="end"></span><button class="btn sm" id="src-go"${list.length?"":" disabled"}>${ico("refresh")} Gather all</button><button class="btn ghost sm" id="src-tog" aria-expanded="${srcShow||!list.length}" aria-controls="src-sec">${ico("link")} Sources · ${list.length}</button></div>`+chips;
+ const bulk=iceSel.size?`<div class="ice-bulk" role="toolbar" aria-label="Selected requests"><span>${iceSel.size} selected</span><span class="end"></span><button class="btn sm" id="ice-bp" title="Each becomes its own idea, titled as gathered (p)">${ico("plus")} Promote</button><button class="btn ghost sm" id="ice-bd" title="Dismiss (d)">${ico("x")} Dismiss</button><button class="btn ghost sm" id="ice-bc" title="Clear selection (Esc)">Clear</button></div>`:"";
+ // The open item's form: a clean title for the idea's card and the person's own details;
+ // what was gathered is added to the idea's notes by the server.
+ const form=it=>`<div class="ice-form"><label for="ice-title" class="hint" style="margin:0">Idea title</label><input class="sel" id="ice-title" data-k="${esc(iceKey(it))}" maxlength="200" value="${esc(it.text)}" aria-label="Idea title"><label for="ice-details" class="hint" style="margin:0">Details (optional)</label><textarea class="sel" id="ice-details" rows="3" placeholder="In your own words: what is needed, for whom, why" aria-label="Details (optional)"></textarea><div class="ice-form-acts"><span class="hint">What was gathered is added to the idea's notes.</span><button class="btn ghost sm" id="ice-cancel">Cancel</button><button class="btn pri sm" id="ice-ok">Promote</button></div></div>`;
+ const row=i=>{const it=ice[i],k=iceKey(it),open=iceForm===k;
+  return `<div class="ice-row${iceCur===k?" cur":""}${iceSel.has(k)?" sel":""}" data-i="${i}" data-k="${esc(k)}"><input type="checkbox" id="ice-ck-${i}" data-ck="${i}"${iceSel.has(k)?" checked":""} aria-label="Select: ${esc(it.text)}"><button class="ice-t" id="ice-o-${i}" data-o="${i}" aria-expanded="${open}" title="${esc(it.text)}">${esc(it.text)}</button><span class="ice-src" title="${esc(srcName(it))}">${esc(srcName(it))}</span><span class="ice-age">${ago(it.at)}</span><span class="ice-ra"><button class="btn ghost sm" id="ice-pr-${i}" data-pr="${i}" title="Promote to Ideas as gathered (p)" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")}</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" title="Dismiss (d)" aria-label="Dismiss: ${esc(it.text)}">${ico("x")}</button></span></div>`
+   +(open?`<div class="ice-open">${it.notes?`<div class="ice-notes">${esc(it.notes)}</div>`:""}<span class="hint" style="margin:0">From ${esc(srcName(it))} · ${ago(it.at)}</span>${form(it)}</div>`:"")};
+ const inbox=ice.length?`<div class="ice-list">${[...groups].map(([g,ix])=>`<div class="ice-cat">${esc(g)} · ${ix.length}</div>${ix.map(row).join("")}`).join("")}</div><p class="hint ice-keys">j k move · o open · x select · p promote · d dismiss · Esc close</p>`
+  :`<div class="ice-zero"><h4>Inbox zero</h4><p>Nothing waiting. Gather all checks your sources for new requests; /kaizen discover in your agent sorts what comes in.</p></div>`;
+ // The sources, folded until asked for; open by itself while there are none.
+ const sec=srcShow||!list.length?`<section class="src-sec" id="src-sec"><div class="ice-hd"><h3>Sources</h3><span class="sched">${d&&d.every&&d.every!=="off"?`Auto-check: every ${esc(d.every)}`:"Auto-check: off"} · <a id="src-to-settings" role="button" tabindex="0">Settings</a></span></div>${list.length?`<div class="src-list">${cards}</div>`:emptyState}${addBox}</section>`:"";
+ $("pbody").innerHTML=d&&d.error?`<p style="color:var(--dim)">${esc(d.error)}</p>`:!d?`<p style="color:var(--dim)">The icebox could not be read.</p>`:bar+bulk+fails+inbox+sec;
+ if(!d||d.error)return;
+ if(iceDraft&&iceDraft[0]===iceForm&&$("ice-title")){$("ice-title").value=iceDraft[1];$("ice-details").value=iceDraft[2]}
+ if($("src-add")){$("src-url").value=typed[0];$("src-label").value=typed[1];$("src-cat").value=typed[4]||"";if(typed[3]!==undefined&&$("src-dir"))$("src-dir").value=typed[3]}
  if($("src-to-settings"))$("src-to-settings").onclick=()=>{setQ="sources";go("settings",true)};
+ $("src-tog").onclick=()=>{srcShow=!(srcShow||!list.length);openSources().then(()=>srcShow&&$("src-sec")?.scrollIntoView({block:"nearest",behavior:"smooth"}))};
+ $("pbody").querySelectorAll("[data-sf]").forEach(b=>b.onclick=()=>{if(iceSrc!==b.dataset.sf)iceSel.clear();iceSrc=b.dataset.sf;openSources()});
  const act=async(body,done)=>{const j=await post("/sources",body);if(j.ok){done(j);load()}if(srcOpen())openSources()};
  $("pbody").querySelectorAll("[data-mv]").forEach(m=>{const s=list[+m.dataset.mv],b=$("src-mb-"+m.dataset.mv),to=picked.get(m.dataset.k);
   if(to&&[...m.options].some(o=>o.value===to))m.value=to;
@@ -1091,17 +1185,46 @@ async function openSources(){
   (m.oninput=()=>{b.disabled=m.value.trim()===(s.category||"")})();
   m.onkeydown=e=>{if(e.key==="Enter"&&!b.disabled)b.click()};
   b.onclick=()=>{b.disabled=true;act({op:"category",dir:s.dir,url:s.url,category:m.value.trim()},()=>toast(m.value.trim()?`New requests from ${s.label||host(s.url)} go under ${m.value.trim()}`:"Category cleared"))}});
- const iceAct=(op,it,msg,extra={})=>(async()=>{const j=await post("/icebox",{op,dir:it.dir,ids:[it.id],...extra});if(j.ok){if(op==="promote")iceForm=null;toast(msg);load()}if(srcOpen())openSources()})();
- $("pbody").querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{iceForm=iceKey(ice[+b.dataset.pr]);openSources().then(()=>{const t=$("ice-title");if(t){t.focus();t.select()}})});
+ // The acting button is disabled as it is pressed, which drops focus to the page; it goes back to the cursor row.
+ const focusCur=()=>{if(!document.activeElement||document.activeElement===document.body)$("pbody").querySelector(".ice-row.cur .ice-t")?.focus()};
+ // Before rows go, the cursor steps to the next row that stays, else the one before.
+ const stepPast=gone=>{const at=order.findIndex(i=>iceKey(ice[i])===iceCur);if(at<0||!gone.has(iceCur))return;
+  const stay=i=>!gone.has(iceKey(ice[i])),n=order.slice(at+1).find(stay)??order.slice(0,at).reverse().find(stay);iceCur=n===undefined?null:iceKey(ice[n])};
+ const iceAct=(op,it,msg,extra={})=>(async()=>{stepPast(new Set([iceKey(it)]));const j=await post("/icebox",{op,dir:it.dir,ids:[it.id],...extra});if(j.ok){if(op==="promote"&&iceForm===iceKey(it))iceForm=null;toast(msg);load()}if(srcOpen())openSources().then(focusCur)})();
+ // Bulk: one dismiss per project; promote one request at a time, each its own idea
+ // titled as gathered (one promote call with several ids would merge them into one).
+ const bulkDo=async op=>{const its=ice.filter(it=>iceSel.has(iceKey(it)));if(!its.length)return;stepPast(new Set(its.map(iceKey)));iceBusy=true;$("ice-bp").disabled=$("ice-bd").disabled=true;let ok=0;
+  try{if(op==="dismiss")for(const dd of new Set(its.map(it=>it.dir))){const ids=its.filter(it=>it.dir===dd).map(it=>it.id);if((await post("/icebox",{op,dir:dd,ids})).ok)ok+=ids.length}
+   else for(const it of its)if((await post("/icebox",{op,dir:it.dir,ids:[it.id]})).ok)ok++}
+  finally{iceBusy=false}
+  iceSel.clear();if(ok)toast(`${ok} ${op==="promote"?"promoted to Ideas":"dismissed"}${ok<its.length?`, ${its.length-ok} not`:""}`);load();if(srcOpen())openSources().then(focusCur)};
+ if(bulk){$("ice-bp").onclick=()=>bulkDo("promote");$("ice-bd").onclick=()=>bulkDo("dismiss");$("ice-bc").onclick=()=>{iceSel.clear();openSources()}}
+ if($("ice-all"))$("ice-all").onchange=()=>{const k=order.map(i=>iceKey(ice[i]));if(nSel===order.length)k.forEach(x=>iceSel.delete(x));else k.forEach(x=>iceSel.add(x));openSources()};
+ if($("ice-all"))$("ice-all").indeterminate=nSel>0&&nSel<order.length;
+ $("pbody").querySelectorAll("[data-ck]").forEach(c=>c.onchange=()=>{const k=iceKey(ice[+c.dataset.ck]);iceCur=k;c.checked?iceSel.add(k):iceSel.delete(k);openSources()});
+ // A row opens on its title or anywhere not a control; open shows what was gathered and the promote form.
+ const toggle=i=>{const k=iceKey(ice[i]);iceCur=k;iceForm=iceForm===k?null:k;openSources().then(()=>{const t=$("ice-title");if(t&&iceForm===k){t.focus();t.select()}else $("ice-o-"+i)?.focus()})};
+ $("pbody").querySelectorAll(".ice-row").forEach(r=>r.onclick=e=>{if(!e.target.closest("input,button"))toggle(+r.dataset.i)});
+ $("pbody").querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>toggle(+b.dataset.o));
+ $("pbody").querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{b.disabled=true;iceAct("promote",ice[+b.dataset.pr],"Promoted to Ideas")});
+ $("pbody").querySelectorAll("[data-ds]").forEach(b=>b.onclick=()=>{b.disabled=true;iceAct("dismiss",ice[+b.dataset.ds],"Dismissed")});
  const open1=ice.find(it=>iceKey(it)===iceForm);
  if($("ice-ok")){
-  const go=()=>{const title=$("ice-title").value.trim();if(!title){$("ice-title").focus();return}$("ice-ok").disabled=true;iceAct("promote",open1,"Promoted to Ideas",{text:title,details:$("ice-details").value})};
-  $("ice-ok").onclick=go;
+  const ok=()=>{const title=$("ice-title").value.trim();if(!title){$("ice-title").focus();return}$("ice-ok").disabled=true;iceAct("promote",open1,"Promoted to Ideas",{text:title,details:$("ice-details").value})};
+  $("ice-ok").onclick=ok;
   $("ice-cancel").onclick=()=>{iceForm=null;openSources()};
-  $("ice-title").onkeydown=e=>{if(e.key==="Enter")go();if(e.key==="Escape")$("ice-cancel").click()};
-  $("ice-details").onkeydown=e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))go();if(e.key==="Escape")$("ice-cancel").click()};
+  $("ice-title").onkeydown=e=>{if(e.key==="Enter")ok();if(e.key==="Escape")$("ice-cancel").click()};
+  $("ice-details").onkeydown=e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))ok();if(e.key==="Escape")$("ice-cancel").click()};
  }
- $("pbody").querySelectorAll("[data-ds]").forEach(b=>b.onclick=()=>{b.disabled=true;iceAct("dismiss",ice[+b.dataset.ds],"Dismissed")});
+ // Keys, read by the page's keydown while the icebox shows. True when the key was used.
+ iceNav=e=>{if(e.altKey||e.ctrlKey||e.metaKey)return false;
+  const k=e.key,at=order.findIndex(i=>iceKey(ice[i])===iceCur),i=order[at];
+  if(k==="Escape"){if(iceForm){iceForm=null;openSources();return true}if(iceSel.size){iceSel.clear();openSources();return true}return false}
+  if(at<0)return false;
+  if(k==="j"||k==="k"){e.preventDefault();const n=order[Math.max(0,Math.min(order.length-1,at+(k==="j"?1:-1)))];iceCur=iceKey(ice[n]);
+   $("pbody").querySelectorAll(".ice-row").forEach(r=>r.classList.toggle("cur",+r.dataset.i===n));$("pbody").querySelector(`.ice-row[data-i="${n}"]`)?.scrollIntoView({block:"nearest"});return true}
+  const b=k==="o"?$("ice-o-"+i):k==="x"?$("ice-ck-"+i):k==="p"?(iceSel.size?$("ice-bp"):$("ice-pr-"+i)):k==="d"?(iceSel.size?$("ice-bd"):$("ice-ds-"+i)):null;
+  if(!b||b.disabled)return false;e.preventDefault();b.click();return true};
  $("pbody").querySelectorAll("[data-chk]").forEach(b=>{const s=list[+b.dataset.chk];
   b.onclick=()=>{b.disabled=true;b.innerHTML=ico("refresh")+" Checking…";
    act({op:"gather",dir:s.dir,url:s.url},j=>{const r=j.results&&j.results[0];
@@ -1109,7 +1232,11 @@ async function openSources(){
  $("pbody").querySelectorAll("[data-rm]").forEach(b=>{const s=list[+b.dataset.rm];
   b.onclick=()=>{if(!confirm(`Remove ${s.label||host(s.url)}? What it gathered stays; added again later, it may bring back ones you deleted or dismissed.`))return;
    act({op:"remove",dir:list[+b.dataset.rm].dir,url:list[+b.dataset.rm].url},()=>toast("Source removed"))}});
- const was=typed[2]&&$(typed[2]);if(was)(was.disabled?$(was.id.replace("src-mb-","src-mv-").replace("src-cs-","src-ct-")):was)?.focus();
+ // A row that went takes focus to the cursor row's title, never to whatever now holds its index.
+ const ci=ice.findIndex(it=>iceKey(it)===iceCur);
+ if(fPick){const at=ice.findIndex(it=>iceKey(it)===fPick[0]);(at>=0?$(fPick[1]+"-"+at):ci>=0?$("ice-o-"+ci):null)?.focus()}
+ const was=!fPick&&typed[2]&&$(typed[2]);if(was)(was.disabled?$(was.id.replace("src-mb-","src-mv-").replace("src-cs-","src-ct-")):was)?.focus();
+ if($("src-add")){
  $("src-add").onclick=()=>{const url=$("src-url").value.trim();if(!url){$("src-url").focus();return}const to=$("src-dir").value;if(!to){$("src-dir").focus();return}
   $("src-add").disabled=true;$("src-add").textContent="Adding…";
   (async()=>{const j=await post("/sources",{op:"add",dir:to,url,label:$("src-label").value.trim(),category:$("src-cat").value.trim()});
@@ -1118,6 +1245,7 @@ async function openSources(){
    else toast(j.error||"Could not add source");
    if(srcOpen())openSources()})()};
  $("src-url").onkeydown=$("src-label").onkeydown=$("src-cat").onkeydown=e=>{if(e.key==="Enter")$("src-add").click()};
+ }
  if($("src-go"))$("src-go").onclick=()=>{$("src-go").disabled=true;$("src-go").innerHTML=ico("refresh")+" Gathering…";
   act({op:"gather",dir:dir||undefined},j=>{const n=(j.results||[]).reduce((a,r)=>a+r.added,0),bad=(j.results||[]).filter(r=>!r.ok).length;
    toast((n?`${n} new in the icebox`:"Nothing new")+(bad?`, ${bad} source${bad===1?"":"s"} could not be read`:""))})}}
@@ -1176,6 +1304,8 @@ $("newtop").onclick=()=>{mode="new";render();$("board").scrollTo(0,0)};
 $("kbd").onclick=()=>$("help").classList.add("on");$("help").onclick=()=>$("help").classList.remove("on");
 document.addEventListener("click",()=>{if(menuKey||clearMenu){menuKey=null;clearMenu=false;render()}});
 document.onkeydown=e=>{
+ // The icebox reads its own keys first; a checkbox there keeps them, for x then j.
+ if(view==="sources"&&iceNav&&srcOpen()&&!$("help").classList.contains("on")&&!e.target.matches("input:not([type=checkbox]),select,textarea,[contenteditable]")&&!e.target.closest("#src-sec")&&iceNav(e))return;
  if(e.target.matches("input,select,textarea,[contenteditable]"))return;
  if(e.key==="?"){$("help").classList.toggle("on");return}
  if(e.key==="/"&&$("sq")&&$("panel").classList.contains("open")){e.preventDefault();$("sq").focus();return}
@@ -1197,11 +1327,11 @@ document.onkeydown=e=>{
 let boot=null;
 // Back from a terminal: what was committed or pushed there touched nothing the server watches.
 addEventListener("focus",()=>load(true));
-function listen(){const es=new EventSource("/events");es.onmessage=ev=>{if(ev.data==="changed"){load(true);if(srcOpen()&&!$("src-go")?.disabled&&!$("src-add")?.disabled)openSources()}else if(ev.data==="reload")location.reload();else if(ev.data.startsWith("hello ")){const b=ev.data.slice(6);if(boot&&b!==boot)location.reload();boot=b}};es.onerror=()=>{es.close();setTimeout(listen,3000)}}
+function listen(){const es=new EventSource("/events");es.onmessage=ev=>{if(ev.data==="changed"){load(true);if(srcOpen()&&!iceBusy&&!$("src-go")?.disabled&&!$("src-add")?.disabled)openSources()}else if(ev.data==="reload")location.reload();else if(ev.data.startsWith("hello ")){const b=ev.data.slice(6);if(boot&&b!==boot)location.reload();boot=b}};es.onerror=()=>{es.close();setTimeout(listen,3000)}}
 // Back to the project picked last time, unless the URL says which view it wants. A
 // plain fetch: a project that is gone should fall back to all, not raise a toast.
 // A page named in the address shows from the first paint; it is filled once the board has loaded.
-const v0=new URLSearchParams(location.search).get("view");markView(["settings","sources"].includes(v0)?v0:"board");document.body.classList.toggle("paged",["settings","sources"].includes(v0));
+const v0=(v=>v==="icebox"?"sources":v)(new URLSearchParams(location.search).get("view"));markView(["settings","sources"].includes(v0)?v0:"board");document.body.classList.toggle("paged",["settings","sources"].includes(v0));
 (async()=>{let d;try{d=localStorage.getItem("kz-proj")}catch(e){}
  if(d&&!urlAll)try{if((await fetch("/cd",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({dir:d})})).ok)all=false;else keep()}catch(e){}
  try{const f=JSON.parse(sessionStorage.getItem("kz-form"));if(f)[mode,modeKey]=f}catch(e){}

@@ -1,0 +1,133 @@
+// The in-card agent (agent.launch: card): the setting, and the real board running a
+// fake agent in a pseudo-terminal, reached only from its own origin.
+import { test, expect } from "bun:test";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { launchMode, closeSessions, readSessions } from "./state.ts";
+import { loginEnv } from "./pty.ts";
+
+const root = realpathSync(mkdtempSync(join(tmpdir(), "kaizen-pty-")));
+
+test("agent.launch: card unless the config chain says terminal, comments between keys allowed", () => {
+  const p = join(root, "mode");
+  mkdirSync(join(p, ".kaizen"), { recursive: true });
+  // The global file is the real one, so only the project file is varied here.
+  writeFileSync(join(p, ".kaizen", "config.yml"), "agent:\n  # where\n  default: auto\n  # the board\n  launch: terminal\n");
+  expect(launchMode(p)).toBe("terminal");
+  writeFileSync(join(p, ".kaizen", "config.yml"), "agent:\n  launch: card\n");
+  expect(launchMode(p)).toBe("card");
+  writeFileSync(join(p, ".kaizen", "config.yml"), "agent.launch: terminal\n");
+  expect(launchMode(p)).toBe("terminal");
+});
+
+test.skipIf(process.platform === "win32")("the board runs the agent in the card: output, input, origin check, and closing", async () => {
+  const homeDir = join(root, "home"), proj = join(homeDir, "a"), st = join(proj, ".kaizen"), bin = join(root, "bin");
+  for (const d of [st, join(homeDir, ".kaizen"), join(homeDir, ".claude"), bin]) mkdirSync(d, { recursive: true });
+  writeFileSync(join(homeDir, ".kaizen", "projects"), proj + "\n");
+  writeFileSync(join(st, "config.yml"), "agent:\n  default: claude\n  launch: card\n");
+  writeFileSync(join(st, "inbox.md"), "# Inbox\n\n- open: say hello\n");
+  // A stand-in for Claude Code: says how it was called, then echoes each line it is sent.
+  writeFileSync(join(bin, "claude"), '#!/bin/sh\necho "args:$*"\nwhile read x; do echo "got:$x"; done\n', { mode: 0o755 });
+  // Started as a launcher starts it: a bare PATH, the agent reachable only through
+  // the PATH the user's login shell builds.
+  const sh = join(root, "loginsh");
+  writeFileSync(sh, `#!/bin/sh\nPATH=${bin}:$PATH exec /bin/sh -c "$4"\n`, { mode: 0o755 });
+  const port = 20000 + Math.floor(Math.random() * 20000);
+  const repo = join(import.meta.dir, "..");
+  const proc = Bun.spawn([process.execPath, join(repo, "cli", "install.ts"), "web", "--port", String(port), "--no-open", "--foreground"], {
+    cwd: proj, stdout: "ignore", stderr: "ignore",
+    env: { ...process.env, HOME: homeDir, USERPROFILE: homeDir, KAIZEN_HOME: repo, CLAUDE_CONFIG_DIR: join(homeDir, ".claude"),
+      PATH: "/usr/bin:/bin", SHELL: sh, DISPLAY: "", WAYLAND_DISPLAY: "", TERMINAL: "", TMUX: "" },
+  });
+  try {
+    const at = `http://127.0.0.1:${port}`;
+    for (let i = 0; ; i++) { try { await fetch(at + "/state"); break; } catch { if (i > 100) throw new Error("board did not start"); await Bun.sleep(50); } }
+
+    // G-02: no terminal window anywhere (none could be found), yet the launch worked.
+    const r = await (await fetch(at + "/run", { method: "POST", body: JSON.stringify({ dir: st, text: "say hello" }) })).json() as any;
+    expect(r.ok).toBe(true);
+    expect(r.pty).toMatch(/^[\w-]+$/);
+    const card = ((await (await fetch(at + "/state")).json()) as any).cards.find((c: any) => c.text === "say hello");
+    expect(card.pty).toEqual({ key: r.pty, alive: true });
+
+    // G-01: no Origin, a foreign one, and another local port are all refused.
+    const url = `${at}/pty?key=${r.pty}`, up = { upgrade: "websocket", connection: "Upgrade", "sec-websocket-version": "13", "sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==" };
+    expect((await fetch(url, { headers: up })).status).toBe(403);
+    expect((await fetch(url, { headers: { ...up, origin: "https://evil.example" } })).status).toBe(403);
+    expect((await fetch(url, { headers: { ...up, origin: `http://127.0.0.1:${port + 1}` } })).status).toBe(403);
+    expect((await fetch(`${at}/pty?key=nope`, { headers: { ...up, origin: at } })).status).toBe(404);
+
+    // The board's own origin: the screen so far, then typing goes through.
+    let seen = "";
+    const ws = new WebSocket(url.replace("http", "ws"), { headers: { origin: at } } as any);
+    const closed = new Promise((ok) => { ws.onclose = ok; });
+    ws.onmessage = (e) => { seen += String(e.data); };
+    await new Promise((ok, no) => { ws.onopen = ok; ws.onerror = no; });
+    const until = async (re: RegExp) => { for (let i = 0; i < 100 && !re.test(seen); i++) await Bun.sleep(30); expect(seen).toMatch(re); };
+    await until(/args:.*--session-id [\w-]+ .*\/kaizen say hello/);
+    ws.send(JSON.stringify({ t: "r", c: 100, r: 30 }));
+    ws.send(JSON.stringify({ t: "i", d: "ping\r" }));
+    await until(/got:ping/);
+
+    // G-03: the session record is the usual one, its PID file the agent's own, so a
+    // run that owns it closes it like a terminal launch.
+    const [s] = readSessions(st);
+    expect(s!.cmd).toBe("claude");
+    const pid = Number(readFileSync(join(st, "sessions", s!.key + ".pid"), "utf8"));
+    expect(process.kill(pid, 0)).toBe(true);
+    mkdirSync(join(st, "runs", "r1"), { recursive: true });
+    writeFileSync(join(st, "runs", "r1", "00-request.md"), "say hello\n");
+    expect(closeSessions(st, "r1")).toBe(1);
+    // The page tells an agent that ended from a board that went away by this reason.
+    expect(((await closed) as CloseEvent).reason).toBe("ended");
+    expect(existsSync(join(st, "sessions", s!.key + ".pid"))).toBe(false);
+    let gone = false;
+    for (let i = 0; i < 50 && !gone; i++) { try { process.kill(pid, 0); await Bun.sleep(30); } catch { gone = true; } }
+    expect(gone).toBe(true);
+
+    // Resume: refused while the run waits on a decision, then the run's own conversation
+    // continues in a new in-card session, and a second press is refused while it lives.
+    const resume = async () => { const x = await fetch(at + "/resume", { method: "POST", body: JSON.stringify({ dir: st, id: "r1" }) }); return { status: x.status, ...(await x.json() as any) }; };
+    writeFileSync(join(st, "runs", "r1", "state.json"), JSON.stringify({ id: "r1", stage: "plan", awaiting: "approvals.plan" }));
+    expect((await resume()).status).toBe(409);
+    writeFileSync(join(st, "runs", "r1", "state.json"), JSON.stringify({ id: "r1", stage: "build", awaiting: null }));
+    // Claude resumes by id only when the conversation's transcript is on disk.
+    const tr = join(homeDir, ".claude", "projects", proj.replace(/[^A-Za-z0-9]/g, "-"));
+    mkdirSync(tr, { recursive: true });
+    writeFileSync(join(tr, s!.sessionId + ".jsonl"), "{}\n");
+    const again = await resume();
+    expect(again).toMatchObject({ status: 200, ok: true });
+    seen = "";
+    const ws2 = new WebSocket(`${at}/pty?key=${again.pty}`.replace("http", "ws"), { headers: { origin: at } } as any);
+    ws2.onmessage = (e) => { seen += String(e.data); };
+    await new Promise((ok, no) => { ws2.onopen = ok; ws2.onerror = no; });
+    await until(new RegExp(`args:.*--resume ${s!.sessionId} .*/kaizen run r1: continue`));
+    expect((await resume()).status).toBe(409);
+    ws2.close();
+  } finally { proc.kill(); await proc.exited; }
+}, 30_000);
+
+test.skipIf(process.platform === "win32")("a board started from a launcher takes the login shell's PATH and exports, not its own bare ones", () => {
+  const bin = join(root, "shells");
+  mkdirSync(bin, { recursive: true });
+  // A profile that greets on stdout before the environment, as many do.
+  writeFileSync(join(bin, "fakesh"), '#!/bin/sh\necho "welcome back"\n[ "$1 $2 $3" = "-l -i -c" ] || exit 9\nFROM_PROFILE=yes PATH=/opt/brew/bin:$PATH PWD=/elsewhere exec /bin/sh -c "$4"\n', { mode: 0o755 });
+  writeFileSync(join(bin, "badsh"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+  const e = loginEnv(join(bin, "fakesh"))!;
+  expect(e.FROM_PROFILE).toBe("yes");
+  expect(e.PATH.split(":")[0]).toBe("/opt/brew/bin");
+  expect(loginEnv(join(bin, "badsh"))).toBeNull();
+  expect(loginEnv(join(bin, "missing"))).toBeNull();
+  // Into a process started with a launcher's bare PATH and its own setting: the
+  // board's PATH first, the profile's added after it, the board's own variable not overridden,
+  // the shell's PWD not taken.
+  const pty = JSON.stringify(join(import.meta.dir, "pty.ts"));
+  const out = Bun.spawnSync([process.execPath, "-e", `import { adoptLoginEnv } from ${pty}; adoptLoginEnv(); console.log(JSON.stringify([process.env.PATH, process.env.FROM_PROFILE, process.env.KEEP, process.env.PWD]))`], {
+    env: { SHELL: join(bin, "fakesh"), PATH: "/usr/bin:/bin", KEEP: "mine", FROM_PROFILE: undefined as any, HOME: root },
+  }).stdout.toString();
+  const [path, from, keep, pwd] = JSON.parse(out);
+  expect(path.split(":").slice(0, 3)).toEqual(["/usr/bin", "/bin", "/opt/brew/bin"]);
+  expect([from, keep]).toEqual(["yes", "mine"]);
+  expect(pwd).not.toBe("/elsewhere");
+});

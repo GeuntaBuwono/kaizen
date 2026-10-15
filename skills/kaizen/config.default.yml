@@ -160,6 +160,14 @@ agent:
   # Only sessions the board or dashboard launched are touched. off: nothing is
   # ended, and a resumed conversation opens beside the window still waiting.
   close: on
+  # Where the web board runs the agent it launches.
+  #   card     - inside the board: the card's Terminal tab shows the agent live and
+  #              takes your typing. The agent lives in the board's process, so
+  #              stopping or upgrading the board ends it. Not on Windows, where it
+  #              falls back to a terminal window.
+  #   terminal - a new terminal window (or tmux/herdr tab) per launch.
+  # The terminal dashboard always opens terminal windows.
+  launch: card
   # Per-tool model and effort for the session the board launches, passed as that
   # tool's own flags (claude --model/--effort, agy --model/--effort, codex -m and
   # model_reasoning_effort, gemini -m, opencode -m). Model names are the tool's own:

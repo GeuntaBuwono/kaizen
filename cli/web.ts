@@ -7,7 +7,9 @@ import {
   readInbox, writeInbox, replaceIdea, moveIdea, abandonRun, launchRun, parseItem, agentChoices, projectOf, KNOWN_AGENTS, plainModel, short, setArchived, writeNotes,
   appendNote, saveAttachment, pidOnPort, readText, cmdExe, sysExe, powershellExe, runGit, cardsGit, readCommit, commitPush, notice, notifier, LOGO,
   reviewFindings, pickFindings, fixPrompt, approvalPrompt, canApproveAwaiting, nativePath, closeSessions, sweepSessions, issueUrl,
+  launchMode, readSessions, ownerOf, resumePrompt,
 } from "./state.ts";
+import { attachPty, writePty, resizePty, ptyState, ptyKeys, adoptLoginEnv } from "./pty.ts";
 import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, gatherSource, gatherAll, gatherDirs, due } from "./sources.ts";
 import { listNotes, saveNote, renameNote, deleteNote, boardIndex, linksTo } from "./notes.ts";
 
@@ -15,7 +17,11 @@ const PAGE = join(dirname(import.meta.dir), "web", "board.html");
 // The notebook: its page, and the CodeMirror bundle `bun run build:web` commits beside it.
 const NOTES_PAGE = join(dirname(import.meta.dir), "web", "notes.html");
 const NOTES_JS = join(dirname(import.meta.dir), "web", "notebook.js");
+// The in-card terminal (agent.launch: card): xterm.js, bundled the same way.
+const TERM_JS = join(dirname(import.meta.dir), "web", "term.js");
+const TERM_CSS = join(dirname(import.meta.dir), "web", "term.css");
 const DEFAULT_PORT = 7420;
+type PtySock = { key: string; detach: (() => void) | null };
 // Read once at start: a board keeps the code it started with, so this is what it
 // runs, not what is installed now. `/` sends it; `current()` compares the two.
 const installed = () => {
@@ -27,7 +33,7 @@ const VERSION = installed();
 // page newer than its server sends ops the server does not know ("unknown op").
 // So the pages are kept as they were at start, and read live (dev edits) only while
 // the installed version is still the one this board runs.
-const AT_START = new Map([PAGE, NOTES_PAGE, NOTES_JS].map((f) => [f, existsSync(f) ? readText(f) : null]));
+const AT_START = new Map([PAGE, NOTES_PAGE, NOTES_JS, TERM_JS, TERM_CSS].map((f) => [f, existsSync(f) ? readText(f) : null]));
 const served = (f: string) => installed() === VERSION && existsSync(f) ? readText(f) : AT_START.get(f) ?? null;
 
 // A board answers at url and runs the installed version. A board from before the
@@ -51,6 +57,9 @@ export async function web(repoDir: string, opts: Opts = {}) {
       if (ev === "uncaughtException") process.exit(1);
     });
   }
+  // Before anything looks for an agent on PATH: the board starts agents itself, and
+  // from a launcher it would otherwise have none of the user's shell setup.
+  adoptLoginEnv();
   // Not fixed for the life of the board: picking a project in the page moves here.
   let state = locate();
   if (state && dirname(state) !== home) remember(dirname(state));
@@ -114,6 +123,20 @@ export async function web(repoDir: string, opts: Opts = {}) {
       pending = null;
       for (const c of clients) { try { c.enqueue("data: changed\n\n"); } catch { clients.delete(c); } }
     }, 200);
+  };
+  // agent.launch: card runs what this board launches inside the board, shown on the card.
+  const inCard = (dir: string) => ({ card: launchMode(projectOf(dir)) === "card", onChange: changed });
+  // An idea's session, until its run exists and owns it (ownerOf).
+  const ideaPty = new Map<string, string>();
+  // The card's newest in-card session, live or recently ended. Sessions are only read
+  // while this board has any, so /state costs nothing more for terminal launches.
+  const ptyOf = (c: Card) => {
+    const live = new Set(ptyKeys());
+    if (!live.size) return undefined;
+    const key = c.kind === "run"
+      ? readSessions(c.state).filter((s) => live.has(s.key) && ownerOf(c.state, s) === c.id).pop()?.key
+      : ideaPty.get(`${c.state}\0${c.text}`);
+    return key && live.has(key) ? { key, alive: ptyState(key)!.alive } : undefined;
   };
   // Dev: the page reloads itself when board.html is saved. Server code needs
   // `bun --watch cli/install.ts web`; the page reconnects and reloads on hello.
@@ -209,7 +232,21 @@ export async function web(repoDir: string, opts: Opts = {}) {
     // big repo, on Windows) then comes back as nothing, and the page shows an empty
     // board. Loopback only, so nothing waits on us but our own page.
     idleTimeout: 0,
-    async fetch(req) {
+    // The in-card terminal: output out as text frames, the page's keys and size in as
+    // {t:"i",d} and {t:"r",c,r}. A null from the session means the agent ended.
+    websocket: {
+      open(ws: Bun.ServerWebSocket<PtySock>) {
+        ws.data.detach = attachPty(ws.data.key, (d) => { if (d === null) ws.close(1000, "ended"); else ws.send(d); });
+      },
+      message(ws: Bun.ServerWebSocket<PtySock>, raw) {
+        let m: any;
+        try { m = JSON.parse(String(raw)); } catch { return; }
+        if (m?.t === "i" && typeof m.d === "string") writePty(ws.data.key, m.d);
+        else if (m?.t === "r") resizePty(ws.data.key, Number(m.c), Number(m.r));
+      },
+      close(ws: Bun.ServerWebSocket<PtySock>) { ws.data.detach?.(); },
+    },
+    async fetch(req, srv) {
       // Host first: a hostname rebound to 127.0.0.1 by an attacker's DNS still
       // arrives with that hostname in Host, and gets nothing.
       const hostname = (req.headers.get("host") ?? "").replace(/:\d+$/, "");
@@ -231,6 +268,27 @@ export async function web(repoDir: string, opts: Opts = {}) {
         const body = served(f);
         if (body === null) return new Response(`${path} missing; run bun run build:web`, { status: 500 });
         return new Response(body, { headers: { "content-type": type, "cache-control": "no-store" } });
+      }
+
+      if (req.method === "GET" && (path === "/term.js" || path === "/term.css")) {
+        const [f, type] = path === "/term.js" ? [TERM_JS, "application/javascript; charset=utf-8"] : [TERM_CSS, "text/css; charset=utf-8"];
+        const body = served(f);
+        if (body === null) return new Response(`${path} missing; run bun run build:web`, { status: 500 });
+        return new Response(body, { headers: { "content-type": type, "cache-control": "no-store" } });
+      }
+
+      // An in-card agent's terminal. Whoever connects here types into an agent that
+      // can run anything, and a page on the wider web may open a WebSocket to
+      // loopback freely, so the Origin is required and must be this board's.
+      if (req.method === "GET" && path === "/pty") {
+        // Same origin exactly, port included: another local server's page is not the board.
+        let same = false;
+        try { same = new URL(req.headers.get("origin") ?? "").host === req.headers.get("host"); } catch { /* no origin */ }
+        if (!same) return bad("cross-origin terminal refused", 403);
+        const key = url.searchParams.get("key") ?? "";
+        if (!/^[\w-]+$/.test(key) || !ptyState(key)) return bad("no such terminal", 404);
+        if (srv.upgrade(req, { data: { key, detach: null } })) return undefined as unknown as Response;
+        return bad("websocket expected", 426);
       }
 
       // Every note of one project, text included: search, tags and backlinks are the page's.
@@ -284,7 +342,7 @@ export async function web(repoDir: string, opts: Opts = {}) {
           project, all, dir: state,
           projects: picker.map((d) => ({ dir: d, label: label(d) })),
           fresh: unset.map((d) => ({ dir: join(d, ".kaizen"), label: tilde(d) })),
-          cards: cards.map((c) => ({ ...c, notice: notice(c), git: markable(c) ? marks.get(c.state)?.[c.id!] : undefined })),
+          cards: cards.map((c) => ({ ...c, notice: notice(c), git: markable(c) ? marks.get(c.state)?.[c.id!] : undefined, pty: ptyOf(c) })),
           now: Date.now(),
         });
       }
@@ -529,11 +587,15 @@ export async function web(repoDir: string, opts: Opts = {}) {
           // A `started` idea may be run again: the terminal the first launch opened
           // can come up empty, and nothing else tells the board a run never began.
           it.notes = readInbox(dir).find((l) => (l.status === "open" || l.status === "started") && l.text === text)?.notes;
-          const r = launchRun(it, dir, undefined, { agent, model: model || undefined, yolo: body.yolo === true });
+          const r = launchRun(it, dir, undefined, { agent, model: model || undefined, yolo: body.yolo === true, ...inCard(dir) });
           if (r.ok) replaceIdea(dir, text, { status: "started", text });
+          if (r.ok && r.pty) {
+            for (const [k, v] of ideaPty) if (!ptyState(v)) ideaPty.delete(k);   // sessions already dropped
+            ideaPty.set(`${dir}\0${text}`, r.pty);
+          }
           changed();
           return json(r.ok
-            ? { ok: true, agent: r.agent, project: tilde(r.projectDir) }
+            ? { ok: true, agent: r.agent, project: tilde(r.projectDir), pty: r.pty }
             : { ok: false, why: r.why, manual: r.manual, agent: r.agent }, r.ok ? 200 : 500);
         }
 
@@ -630,11 +692,11 @@ export async function web(repoDir: string, opts: Opts = {}) {
           // The run's conversation picks the fix up, and once that window is open the
           // waiting one ends. A failed launch leaves it: the decision has nowhere else.
           const before = Date.now();
-          const r = launchRun({ severity: null, where: null, text, raw: text }, dir, id);
+          const r = launchRun({ severity: null, where: null, text, raw: text }, dir, id, inCard(dir));
           if (r.ok) closeSessions(dir, id, { before });
           changed();
           return json(r.ok
-            ? { ok: true, agent: r.agent }
+            ? { ok: true, agent: r.agent, pty: r.pty }
             : { ok: false, why: r.why, manual: r.manual, agent: r.agent }, r.ok ? 200 : 500);
         }
 
@@ -657,11 +719,32 @@ export async function web(repoDir: string, opts: Opts = {}) {
           // conversation continues in one new window, and then the idle one ends. A
           // failed launch leaves it open, since the decision went nowhere.
           const before = Date.now();
-          const r = launchRun({ severity: null, where: null, text, raw: text }, dir, id);
+          const r = launchRun({ severity: null, where: null, text, raw: text }, dir, id, inCard(dir));
           if (r.ok) closeSessions(dir, id, { before });
           changed();
           return json(r.ok
-            ? { ok: true, agent: r.agent }
+            ? { ok: true, agent: r.agent, pty: r.pty }
+            : { ok: false, why: r.why, manual: r.manual, agent: r.agent }, r.ok ? 200 : 500);
+        }
+
+        // Start a run's agent again after it ended mid-stage (crashed, closed, or a stalled
+        // run), in the conversation it had where the tool can resume one. Never beside a
+        // live in-card agent, and never on a run waiting for a decision: those have their buttons.
+        if (path === "/resume") {
+          const id = String(body.id ?? "");
+          if (!/^[\w.-]+$/.test(id)) return bad("bad run id");
+          if (dir === join(home, ".kaizen")) return bad("no project to run in", 409);
+          let run: any;
+          try { run = JSON.parse(readText(join(dir, "runs", id, "state.json"))); } catch { return bad("no such run", 404); }
+          if (run.stage === "done" || run.stage === "abandoned" || run.awaiting) return bad("this run is not waiting to be resumed", 409);
+          if (readSessions(dir).some((s) => ptyState(s.key)?.alive && ownerOf(dir, s) === id)) return bad("its agent is still running in its card", 409);
+          const text = resumePrompt(id);
+          const before = Date.now();
+          const r = launchRun({ severity: null, where: null, text, raw: text }, dir, id, inCard(dir));
+          if (r.ok) closeSessions(dir, id, { before });
+          changed();
+          return json(r.ok
+            ? { ok: true, agent: r.agent, pty: r.pty }
             : { ok: false, why: r.why, manual: r.manual, agent: r.agent }, r.ok ? 200 : 500);
         }
 

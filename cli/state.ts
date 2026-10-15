@@ -4,6 +4,7 @@
 import { existsSync, readFileSync, readdirSync, appendFileSync, writeFileSync, mkdirSync, statSync, realpathSync, rmSync, renameSync, copyFileSync } from "node:fs";
 import { join, dirname, win32, posix } from "node:path";
 import { homedir, arch, cpus, release, totalmem, version as osVersion } from "node:os";
+import { startPty, ptySupported } from "./pty.ts";
 
 // The real path: process.cwd() is always physical, so a raw $HOME that crosses a
 // symlink (/home -> var/home) would never compare equal to it.
@@ -496,6 +497,11 @@ export function fixPrompt(id: string, nums: number[]) {
     + `Leave every other finding alone, and mark the fixed ones done in its 06-backlog.md.`;
 }
 
+// A run whose agent ended mid-stage, picked up where its state.json says.
+export function resumePrompt(id: string) {
+  return `run ${id}: continue it from its state.json; its last agent session ended before the stage finished.`;
+}
+
 export function canApproveAwaiting(awaiting: unknown): awaiting is "approvals.plan" | "approvals.review" | "findings" {
   return awaiting === "approvals.plan" || awaiting === "approvals.review" || awaiting === "findings";
 }
@@ -959,7 +965,7 @@ export function boardCards(states: string[], now: number): Card[] {
 // What starting a run needs, minus the screens: the TUI and the web board both
 // launch the same way and only differ in how they tell the user.
 export type Launch =
-  | { ok: true; agent: Agent; prompt: string; projectDir: string; cmd: string[] }
+  | { ok: true; agent: Agent; prompt: string; projectDir: string; cmd: string[]; pty?: string }
   | { ok: false; agent: Agent; prompt: string; projectDir: string; manual: string; why: string };
 
 export function projectOf(from: string) {
@@ -1034,6 +1040,15 @@ export function closeEnabled(projectDir: string) {
     } catch { /* absent */ }
   }
   return true;
+}
+
+// agent.launch in the config chain: where the web board runs what it launches.
+export function launchMode(projectDir: string): "card" | "terminal" {
+  for (const t of configTexts(projectDir)) {
+    const m = /^agent:\n(?:[ \t]+.*\n)*?[ \t]+launch:[ \t]*["']?([^"'\s]+)/m.exec(t) || /^agent\.launch:[ \t]*["']?([^"'\s]+)/m.exec(t);
+    if (m) return m[1] === "terminal" ? "terminal" : "card";
+  }
+  return "card";
 }
 
 // Whether a live PID is still the agent a record launched, not a stranger that reused
@@ -1128,7 +1143,7 @@ export function runAgent(st: string, id: string): { cmd: string; model: string |
 // record; making one here would shadow the user's.
 export function sessionLaunch(projectDir: string, cmd: string, base: string[], prompt: string, text: string, run?: string, model?: string, yolo?: boolean) {
   const st = join(projectDir, ".kaizen");
-  if (!existsSync(st)) return { fullCmd: [...base, ...promptArgs(cmd, prompt)], pidFile: undefined, record: undefined };
+  if (!existsSync(st)) return { fullCmd: [...base, ...promptArgs(cmd, prompt)], key: undefined, pidFile: undefined, record: undefined };
   const f = SESSION_FLAGS[cmd];
   const prev = run ? firstSession(st, run, cmd, projectDir) : null;
   const sessionId = f ? prev?.sessionId ?? crypto.randomUUID() : null;
@@ -1137,7 +1152,7 @@ export function sessionLaunch(projectDir: string, cmd: string, base: string[], p
   mkdirSync(sessionsDir(st), { recursive: true });
   const record = join(sessionsDir(st), key + ".json");
   writeFileSync(record, JSON.stringify({ run: run ?? null, text, cmd, model: model ?? null, ...(yolo ? { yolo: true } : {}), sessionId, started: Date.now() }) + "\n");
-  return { fullCmd, pidFile: join(sessionsDir(st), key + ".pid"), record };
+  return { fullCmd, key, pidFile: join(sessionsDir(st), key + ".pid"), record };
 }
 
 // Claude Code asks "do you trust this folder?" the first time it opens one, and inside
@@ -1161,15 +1176,17 @@ export function trustFolder(dir: string, cfg = join(process.env.CLAUDE_CONFIG_DI
 
 // run: the run a decision is for. Without it, an idea starting a new run.
 // pick: the tool, model and yolo chosen for a new run; a decision takes the run's own
-// tool and model, and never yolo.
-export function launchRun(it: Item, from: string, run?: string, pick: { agent?: string; model?: string; yolo?: boolean } = {}): Launch {
+// tool and model, and never yolo. card: run it inside the board (agent.launch: card),
+// where a pseudo-terminal exists; onChange is told when that agent ends.
+export function launchRun(it: Item, from: string, run?: string, pick: { agent?: string; model?: string; yolo?: boolean; card?: boolean; onChange?: () => void } = {}): Launch {
   const projectDir = projectOf(from);
   // The run will be born here; the board must know the dir or the idea never retires.
   remember(projectDir);
   const own = run && !pick.agent ? runAgent(join(projectDir, ".kaizen"), run) : null;
   const agent = detectDefaultAgent(projectDir, pick.agent ?? own?.cmd);
   if (agent.cmd === "claude") trustFolder(projectDir);
-  const agentBin = Bun.which(agent.cmd) ?? agent.cmd;
+  // onPath, not Bun.which: the board may have taken a login shell's PATH after it started.
+  const agentBin = onPath(agent.cmd) ?? agent.cmd;
   const prompt = requestOf(it.where ? `/kaizen ${it.text} (${it.where})` : `/kaizen ${it.text}`, it.notes, from);
   const wanted = pick.model ?? (own?.cmd === agent.cmd ? own.model : null) ?? undefined;
   const model = wanted && plainModel(wanted) ? wanted : undefined;
@@ -1181,6 +1198,16 @@ export function launchRun(it: Item, from: string, run?: string, pick: { agent?: 
   const manual = manualCommand(projectDir, agent.cmd, prompt, flags);
   const drop = () => { if (s.record) rmSync(s.record, { force: true }); };
 
+  if (pick.card && ptySupported) {
+    const key = s.key ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    try {
+      startPty(key, s.fullCmd, projectDir, s.pidFile, pick.onChange);
+      return { ok: true, agent, prompt, projectDir, cmd: s.fullCmd, pty: key };
+    } catch (err: any) {
+      drop();
+      return { ok: false, agent, prompt, projectDir, manual, why: err?.message ?? String(err) };
+    }
+  }
   const term = findTerminal(projectDir, s.fullCmd, s.pidFile);
   if (!term) {
     drop();

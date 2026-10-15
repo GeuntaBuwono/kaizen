@@ -176,11 +176,11 @@ slower CPU path); a browser without a microphone API or WebAssembly shows no mic
 ### Request sources
 
 Requests that already live somewhere else — a team's Google Sheet, a Doc, a shared
-note — do not have to be retyped. The link icon beside the gear opens **Request
-sources**: paste a link, give it a category if you like (*Feedback*, *Bugs*), and
-kaizen reads it at once and puts every request it has not seen before in the project's
-**icebox**, below the sources on the same page; the panel says what came back, or why
-the link could not be read. In a sheet, the header
+note — do not have to be retyped. **Icebox** in the side menu opens the project's
+icebox; its **Sources** button unfolds the links it reads. Paste a link there, give it
+a category if you like (*Feedback*, *Bugs*), and kaizen reads it at once and puts
+every request it has not seen before in the icebox; the page says what came back, or
+why the link could not be read. In a sheet, the header
 is looked for in the first five rows that hold anything, and a column headed `Request`,
 `Idea`, `Title`, `Task`, `PBI`, `Summary`, `Name`, `Detail`, `Details`, `Description`,
 `Deskripsi`, `Feedback`, `Issue`, `Permintaan` or `Judul` is the request; the other
@@ -189,10 +189,13 @@ a header the request is one column for the whole sheet, the one holding the most
 `Finish` or `Finished` is left out, and gathered later if its status changes. A doc or
 a plain-text link gives one request per line.
 
-The icebox keeps each request as the source wrote it, with the row's other cells, its
-source and the source's category, grouped by category. **Promote** makes it an idea in
+The icebox reads like an inbox: one row per request as the source wrote it, grouped
+by category, with a chip per source to narrow the list. Open a row to see the row's
+other cells and promote it under a title of your own; **Promote** makes it an idea in
 Ideas, with a note saying where it came from and a *gathered* chip; **Dismiss** sets it
-aside. Run `/kaizen discover` in your agent and it reads the icebox for you: it groups
+aside. Check several rows to promote or dismiss them together (each promoted row
+becomes its own idea, titled as gathered). Keys: `j`/`k` move, `o` opens, `x` checks,
+`p` promotes, `d` dismisses, `Esc` closes. Run `/kaizen discover` in your agent and it reads the icebox for you: it groups
 requests that ask for the same thing, drafts one idea per need, and promotes only the
 ones you pick (`kaizen icebox promote <ids>` underneath).
 
