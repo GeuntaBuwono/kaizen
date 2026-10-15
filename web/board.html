@@ -311,19 +311,20 @@ aside .foot .more .menu-pop{left:0;right:auto;top:auto;bottom:calc(100% + 4px)}.
 .ice-list{display:flex;flex-direction:column;gap:1px}
 .ice-list .ice-cat{margin:0;padding:14px 12px 4px;font-size:12px;font-weight:500}.ice-cat i{font-style:normal;font-weight:400;margin-left:6px}.ice-list .ice-cat:first-child{padding-top:4px}
 .ice-row{border-radius:var(--r-s)}.ice-open{border-radius:0 0 var(--r-s) var(--r-s);margin-top:-1px;background:var(--hover)}.ice-row:has(+.ice-open){border-radius:var(--r-s) var(--r-s) 0 0;background:var(--hover)}
-.ice-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:36px;padding:2px 8px 2px 12px;cursor:pointer}
+.ice-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:10px;min-height:36px;padding:2px 8px 2px 12px;cursor:pointer}
 .ice-row:hover,.ice-row.cur{background:var(--hover)}
 .ice-row.cur{box-shadow:inset 0 0 0 1px var(--line)}
 .ice-row.sel{background:color-mix(in srgb,var(--accent) 8%,transparent)}
 .ice-t{font:inherit;font-size:13px;color:var(--ink);background:none;border:0;padding:6px 0;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ice-t[aria-expanded=true]{font-weight:500}
-.ice-src{font-size:11px;color:var(--dim);max-width:150px;display:inline-flex;align-items:center;gap:6px;min-width:0}.ice-src .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ice-src{display:inline-flex;align-items:center}
+.ice-meta{display:inline-flex;align-items:center;gap:10px;min-width:0;font-size:11px;color:var(--dim)}.ice-meta .nm{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ice-age{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:64px;text-align:right}
 .ice-ra{display:none;gap:2px;min-width:64px;justify-content:flex-end}
 .ice-ra .btn{padding:0 6px}
 .ice-row:hover .ice-age,.ice-row.cur .ice-age,.ice-row:focus-within .ice-age{display:none}
 .ice-row:hover .ice-ra,.ice-row.cur .ice-ra,.ice-row:focus-within .ice-ra{display:flex}
-.ice-open{display:grid;gap:8px;padding:6px 12px 12px 37px}
+.ice-open{display:grid;gap:8px;padding:6px 12px 12px 61px}
 .ice-zero{padding:40px 16px;text-align:center;border:1px solid var(--line);border-radius:var(--r);background:var(--bg-2)}
 .ice-zero h4{margin:0 0 6px;font-size:14px;font-weight:600;color:var(--ink)}
 .ice-zero p{margin:0;font-size:12px;color:var(--dim);line-height:1.5}
@@ -335,7 +336,7 @@ body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
 .src-sec .sub a{color:var(--accent);text-decoration:none;cursor:pointer}
 .src-sec .sub a:hover{text-decoration:underline}
 @media(hover:none){.ice-ra{display:flex}.ice-age{display:none}}
-@media(max-width:640px){.ice-src .nm{display:none}.ice-open{padding-left:12px}}
+@media(max-width:640px){.ice-meta .nm{display:none}.ice-open{padding-left:12px}}
 .src-list{display:flex;flex-direction:column;gap:10px}
 .src-card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow-1);display:flex;flex-direction:column;gap:9px;transition:border-color .15s}
 .src-card:hover{border-color:color-mix(in srgb,var(--line) 70%,var(--ink))}
@@ -1259,7 +1260,7 @@ async function openSources(){
   if(r.wait)return`<div class="ice-form-acts"><span class="hint">Drafting…</span></div>`;
   return`<div class="ice-form"><label for="ice-reply" class="hint" style="margin:0">Your reply${r.note?` · ${esc(r.note)}`:""}</label><textarea class="sel" id="ice-reply" rows="3" maxlength="2000" aria-label="Your reply"${r.busy||r.again?" disabled":""}>${esc(r.text)}</textarea><span class="hint" id="ice-rn" style="margin:0">${r.again?"Writing another…":`${r.text.length} chars`}</span><div class="ice-form-acts"><span class="end"></span>${G.connected?`${style(r.busy||r.again)}<button class="btn ghost sm" id="ice-rg"${r.busy||r.again?" disabled":""}>Regenerate</button>`:""}<button class="btn ghost sm" id="ice-rc"${r.busy?" disabled":""}>Cancel</button><button class="btn pri sm" id="ice-rs"${r.busy||r.again||!r.text.trim()?" disabled":""}>${r.busy?"Sending…":"Send reply"}</button></div></div>`};
  const row=i=>{const it=ice[i],k=iceKey(it),open=iceForm===k;
-  return `<div class="ice-row${iceCur===k?" cur":""}${iceSel.has(k)?" sel":""}" data-i="${i}" data-k="${esc(k)}"><input type="checkbox" id="ice-ck-${i}" data-ck="${i}"${iceSel.has(k)?" checked":""} aria-label="Select: ${esc(it.text)}"><button class="ice-t" id="ice-o-${i}" data-o="${i}" aria-expanded="${open}" title="${esc(it.text)}">${esc(it.text)}</button><span class="ice-src" title="${esc(srcName(it))}">${fav(it.source,"link",list.find(x=>x.dir===it.dir&&x.url===it.source)?.social)}<span class="nm">${esc(many?it.project||srcName(it):srcName(it))}</span></span>${it.replied?`<span class="chip" title="Replied ${esc(ago(it.replied))}">replied</span>`:""}<span class="ice-age">${ago(it.at)}</span><span class="ice-ra"><button class="btn ghost sm" id="ice-pr-${i}" data-pr="${i}" title="Promote to Ideas as gathered (p)" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")}</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" title="Dismiss (d)" aria-label="Dismiss: ${esc(it.text)}">${ico("x")}</button></span></div>`
+  return `<div class="ice-row${iceCur===k?" cur":""}${iceSel.has(k)?" sel":""}" data-i="${i}" data-k="${esc(k)}"><input type="checkbox" id="ice-ck-${i}" data-ck="${i}"${iceSel.has(k)?" checked":""} aria-label="Select: ${esc(it.text)}"><span class="ice-src" title="${esc(srcName(it))}">${fav(it.source,"link",list.find(x=>x.dir===it.dir&&x.url===it.source)?.social)}</span><button class="ice-t" id="ice-o-${i}" data-o="${i}" aria-expanded="${open}" title="${esc(it.text)}">${esc(it.text)}</button><span class="ice-meta">${many?`<span class="nm">${esc(it.project||"")}</span>`:""}${it.replied?`<span title="Replied ${esc(ago(it.replied))}">replied</span>`:""}<span class="ice-age">${ago(it.at)}</span><span class="ice-ra"><button class="btn ghost sm" id="ice-pr-${i}" data-pr="${i}" title="Promote to Ideas as gathered (p)" aria-label="Promote to Ideas: ${esc(it.text)}">${ico("plus")}</button><button class="btn ghost sm" id="ice-ds-${i}" data-ds="${i}" title="Dismiss (d)" aria-label="Dismiss: ${esc(it.text)}">${ico("x")}</button></span></span></div>`
    +(open?`<div class="ice-open">${it.notes?`<div class="ice-notes">${esc(it.notes)}</div>`:""}<span class="hint" style="margin:0">From ${esc(srcName(it))} · ${ago(it.at)}${it.post?` · <a href="${esc(it.post)}" target="_blank" rel="noopener">open post</a>`:""}</span>${replyBox(it)}${form(it)}</div>`:"")};
  const inbox=ice.length&&!order.length?`<div class="ice-zero"><h4>Nothing matches</h4><p>${ice.length} waiting outside these filters.</p><p style="margin-top:10px"><button class="btn sm" id="ice-unf">Clear filters</button></p></div>`:ice.length?`<div class="ice-list">${[...groups].map(([g,ix])=>`<div class="ice-cat">${esc(g)}<i>${ix.length}</i></div>${ix.map(row).join("")}`).join("")}</div>`
   :`<div class="ice-zero"><h4>Inbox zero</h4><p>Nothing waiting. Gather all checks your sources for new requests; /kaizen discover in your agent sorts what comes in.</p></div>`;
