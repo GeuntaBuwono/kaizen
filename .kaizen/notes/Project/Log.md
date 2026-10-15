@@ -19,3 +19,4 @@ updated: 2026-10-15
 - 2026-10-15 release — 1.30.0: reply to gathered social posts from the Icebox; resume an ended in-card agent session
 - 2026-10-15 run 2026-10-15-reply-style-regenerate — Sources and icebox (reply styles and Regenerate)
 - 2026-10-15 run 2026-10-15-board-update-alert — Web board (update alert in Settings, one-click upgrade and restart)
+- 2026-10-15 release — 1.31.0: update alert in Settings with one-click upgrade and board restart; reply styles and Regenerate in the Icebox
