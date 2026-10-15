@@ -20,6 +20,9 @@ Shared links (sheets, docs, social searches) kaizen reads for requests; each req
 - Promoted items become ideas on the board, and ideas start [[Workflow]] runs.
 
 ## Watch out
+- Social gathers judge posts against what the project is for: `about()` in `cli/chatgpt.ts` sends the README (else the notebook Index), first 1500 chars, to ChatGPT; `gather.md` tells the agent the same. Without either, it falls back to generic "asks for something".
+- ChatGPT drifts to other sites (Reddit) when a platform shows little; `gatherSource` drops any post whose link in `notes` is not on the source's platform (`socialOf`).
+- A source whose `seen` list is empty reports "no requests found", never "nothing new" (`record()`).
 - `sift` finds a sheet's header by shape; test any change against a fixed set of sheet shapes, old vs new side by side (`.kaizen/memory.md`).
 - The Sources panel rebuilds on every action; controls need an id and an explicit step (`.kaizen/memory.md`).
 

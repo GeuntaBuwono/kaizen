@@ -9,3 +9,4 @@ updated: 2026-10-15
 - 2026-10-15 update — Web board: card footer layout (run 2026-10-15-card-layout)
 - 2026-10-15 release — 1.27.0 published to npm, GitHub Packages, GitHub release (run 2026-10-15-release-1-27-0)
 - 2026-10-15 update — no notes behind; lint clean
+- 2026-10-15 run 2026-10-15-gather-project-goals — Sources and icebox

@@ -69,3 +69,37 @@ test("gather: the plan streams items and completes with an empty output; prose i
   expect(out.empty).toBe("ChatGPT sent back an empty answer.");
   expect(out.shape).toEqual([false, 0]);
 });
+
+test("gather: the plan is told what the project is for; a source that never found anything says so", () => {
+  const out = run(`
+    const fs = await import("node:fs");
+    const root = ${JSON.stringify(join(home, "r"))}, state = root + "/.kaizen";
+    fs.mkdirSync(state, { recursive: true });
+    fs.writeFileSync(root + "/README.md", '<img src="b.svg"><!-- x -->\\n**Arsir** is a drafting table for [indie architects](https://x.dev), width < 2 m > depth.\\n![shot](s.png)');
+    const url = src.socialUrl("threads", "arsitekrumahan");
+    src.addSource(state, url);
+    let sent;
+    const ev = (o) => "data: " + JSON.stringify(o) + "\\n\\n";
+    const answer = (requests) => async (_u, init) => { sent = JSON.parse(init.body);
+      return new Response(ev({ type: "response.completed", response: { output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ requests }) }] }] } })); };
+    globalThis.fetch = answer([]);
+    const none = await cg.gatherSource(state, url, "gpt-test");
+    const asked = [sent.input[0].content[0].text, sent.instructions];
+    globalThis.fetch = answer([{ text: "Butuh denah rumah 2 lantai", notes: "@ina · https://www.threads.net/@ina/post/1 · 2026-10-14" },
+      { text: "Floor plan feedback please", notes: "@bo · https://www.reddit.com/r/floorplan/1 · 2026-10-14" }, { text: "No link at all" }]);
+    await cg.gatherSource(state, url, "gpt-test");
+    globalThis.fetch = answer([]);
+    const again = await cg.gatherSource(state, url, "gpt-test");
+    fs.rmSync(root + "/README.md");
+    const bare = cg.about(state);
+    fs.mkdirSync(state + "/notes/Project", { recursive: true });
+    fs.writeFileSync(state + "/notes/Project/Index.md", "# arsir — index\\n\\nDrafting table, see [[Workflow|the flow]].\\n\\n## Read first\\n- never run uninstall\\n");
+    return { none: none.note, again: again.note, asked, bare, index: cg.about(state), ice: src.readIcebox(state).map((i) => i.text) };`);
+  expect(out.none).toBe("no requests found");
+  expect(out.again).toBe("nothing new");
+  expect(out.asked[0]).toStartWith("The project:\n**Arsir** is a drafting table for indie architects, width < 2 m > depth.\n\nSource: ");
+  expect(out.asked[1]).toContain("this project could answer");
+  expect(out.bare).toBe("");
+  expect(out.ice).toEqual(["Butuh denah rumah 2 lantai"]);
+  expect(out.index).toBe("# arsir — index Drafting table, see Workflow.");
+});

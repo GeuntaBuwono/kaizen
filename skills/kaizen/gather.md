@@ -19,9 +19,12 @@ social media sources (X, TikTok, Instagram, Threads), which kaizen never fetches
    public search, tag or profile page for one keyword, #hashtag or @account. Open that
    link first. If it needs a sign-in or shows nothing, search the web for the same
    keyword, hashtag or account on that platform's site (`site:x.com "dark mode"`), and
-   read only the public post pages the search returns. Take recent posts, at most
-   fifty: each post's own text as the request, and as its notes `@author · post link ·
-   date`. Leave out ads, and posts that ask for nothing. Never sign in, and never use an
+   read only the public post pages the search returns. First read what the project is
+   for: its `README.md`, else `.kaizen/notes/Project/Index.md`. Take recent posts, at
+   most fifty, that show a need, a pain, a wish or a complaint this project could
+   answer, even when they do not name it: each post's own text as the request, and as
+   its notes `@author · post link · date`. Leave out ads, and posts unrelated to the
+   project. Never sign in, and never use an
    account or a key the user has not set up for this.
 3. Hand what you read to kaizen. With your file-writing tool, not the shell, write the
    requests to a new temporary file outside the project, under a name you choose: one

@@ -199,6 +199,18 @@ text as a request with its author, link and date as notes, and puts them in the
 icebox under the source's category. From a terminal, `kaizen sources add` with the
 platform link works the same.
 
+Instead of your agent, your ChatGPT plan can read social sources: connect it from the
+Icebox (setting `sources.agent`), and **Gather** on a social source asks ChatGPT, with
+web search, for the same posts. Either way the gatherer keeps posts relevant to the
+project rather than only explicit feature requests — a need, a pain or a wish the
+project could answer. It judges that by the project's `README.md`, or the opening of
+the notebook index when there is no README. With ChatGPT, the first 1500 characters of
+that description are sent to OpenAI with each gather. A source that has never turned
+up anything says *no requests found*; *nothing new* means everything it found is
+already in the icebox. A post is only filed under a source when its link is on that
+source's platform. Google Sheets, Docs and plain-text links are read as they are, with
+no relevance check: every request in them lands in the icebox.
+
 The icebox reads like an inbox: one row per request as the source wrote it, grouped
 by category, with dropdowns beside the count to narrow it by category and by source.
 In *All projects* a project dropdown narrows it too; it is the board's own *Showing*

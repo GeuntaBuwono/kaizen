@@ -396,10 +396,10 @@ export function setLast(state: string, url: string, last: Last) {
 // What one ingest amounted to, in the words the board shows.
 export function record(state: string, url: string, r: { added: number; held: number }, rows?: number, done = 0): Result {
   // "nothing new" is only true of a source something was once taken from.
-  const never = rows !== undefined && !readSources(state).find((s) => s.url === url)?.seen.length;
+  const never = !readSources(state).find((s) => s.url === url)?.seen.length;
   const skipped = done ? `, ${done} done skipped` : "";
   const note = r.added ? `${r.added} new${r.held ? `, ${r.held} held for next time` : ""}${skipped}`
-    : done ? `nothing new${skipped}` : never ? `no requests found in ${rows} rows` : "nothing new";
+    : done ? `nothing new${skipped}` : never ? `no requests found${rows === undefined ? "" : ` in ${rows} rows`}` : "nothing new";
   const last = { at: new Date().toISOString(), ok: true, added: r.added, note };
   setLast(state, url, last);
   return { url, ...last };
