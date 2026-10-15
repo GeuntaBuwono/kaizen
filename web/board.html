@@ -80,6 +80,7 @@ select.sel,button.sel{cursor:pointer;appearance:none;padding-right:30px;max-widt
 .ib{width:34px;height:34px;display:grid;place-items:center;color:var(--dim);border-radius:var(--r-s);transition:background .12s,color .12s}
 .ib:hover{color:var(--ink);background:var(--hover)}
 .ib.pri{color:var(--accent)}
+#pterm.on{color:var(--accent);background:var(--hover)}#pterm[hidden]{display:none}
 .ib.sm{width:26px;height:26px}.ib.sm svg{width:15px;height:15px}
 /* dictation mic: accent while listening (pulsing) or still transcribing; digits while the model downloads */
 /* the field being dictated into: accent border and a glow that swells with the voice level (--lvl, 0..1) */
@@ -407,6 +408,7 @@ body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
 <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
 <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
+<symbol id="i-term" viewBox="0 0 24 24"><path d="M4 17l6-5-6-5M12 19h8"/></symbol>
 <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
 <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></symbol>
 <symbol id="i-open" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></symbol>
@@ -483,7 +485,7 @@ body:not(.paged) .src-sec,body:not(.paged) .src-scrim{display:none}
 
 <div class="scrim" id="scrim"></div>
 <aside id="panel" aria-label="detail">
-  <header><div class="t"><b id="ptitle"></b><div class="sub" id="psub"></div></div><button class="ib" id="pclose" aria-label="Close" title="Close"><svg><use href="#i-close"/></svg></button></header>
+  <header><div class="t"><b id="ptitle"></b><div class="sub" id="psub"></div></div><button class="ib" id="pterm" aria-label="Terminal" title="Terminal" hidden><svg><use href="#i-term"/></svg></button><button class="ib" id="pclose" aria-label="Close" title="Close"><svg><use href="#i-close"/></svg></button></header>
   <nav id="ptabs"></nav>
   <div class="body md" id="pbody"></div>
   <div class="foot" id="pfoot"></div>
@@ -586,7 +588,7 @@ const NEED={"approvals.plan":"plan needs your approval","approvals.review":"revi
 const WORD={idea:"idea",starting:"starting",running:"running",stalled:"stalled",waiting:"waiting on you",done:"done",abandoned:"abandoned"};
 
 let S={project:null,projects:[],cards:[],now:Date.now(),all:false};
-let all=new URLSearchParams(location.search).get("all")!=="0",openKey=null,mode=null,modeKey=null,filter=null,menuKey=null,tab=0,runDoc=null;
+let all=new URLSearchParams(location.search).get("all")!=="0",openKey=null,mode=null,modeKey=null,filter=null,menuKey=null,tab="request",lastTab="request",runDoc=null;
 // A column shows this many cards, then a "more" line; Done is where it matters.
 const FOLD=6;const unfolded=new Set();
 // Per column: "old" puts the oldest first; anything else is newest first.
@@ -640,7 +642,7 @@ function card(c){
  const chips=[];
  if(c.status==="waiting")chips.push(`<span class="chip warn"><i></i>${esc(need(c.awaiting)||"needs you")}</span>`);
  else if(c.status==="running")chips.push(`<span class="chip run"><i></i>running</span>`);
- if(c.pty&&c.pty.alive)chips.push(`<span class="chip run" title="The agent is running in this card: open it, Terminal tab">in card</span>`);
+ if(c.pty&&c.pty.alive)chips.push(`<span class="chip run" title="The agent is running in this card: open it, terminal button at the top">in card</span>`);
  if(all)chips.push(`<span class="chip">${esc(c.where)}</span>`);
  chips.push(...(c.tags||[]).map(t=>{const mark=MARKS[t]?`<svg><use href="#c-${t}"/></svg>`:"";return `<span class="chip${t==="full"||t==="lite"?" accent":t==="yolo"?" warn":""}"${t==="yolo"?' title="Started in Yolo: the agent runs commands without asking"':""}>${mark}${esc(NAMES[t]||t)}</span>`}));
  // A gathered idea's notes open with the stamp promote() writes (ingest() wrote it before
@@ -798,18 +800,18 @@ function nav(dx,dy){
 // ---- detail panel
 // A run's tabs, its phases in board order. A card opens on its column's tab.
 const TABS=[["Request","request"],["Notes","notes"],["Plan","plan"],["Backlog","backlog"],["Work","impl"],["Review","review"],["Preview","preview"]];
-const tabOf=k=>TABS.findIndex(t=>t[1]===k);
 // keepTab: a link already chose the tab.
 function open(c,keepTab){
  if(view!=="board")go("board",true);
  stopDictation(true); // the panel body is about to be replaced
  fixOff.clear();openKey=key(c);$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=c.kind==="idea"?brief(c.text).head:c.text;render();
+ $("pterm").hidden=true;
  if(c.kind==="idea"){runDoc=null;$("psub").textContent="Idea · "+c.where;$("ptabs").innerHTML="";ideaBody(c);
   const foot=$("pfoot");foot.innerHTML=c.archived?`<button class="btn pri" data-a="restore">Restore</button>`:c.status==="idea"?`<button class="btn ghost danger" data-a="delete">Delete</button><button class="btn ghost" data-a="archive">Archive</button><span class="dec"><button class="btn" data-a="reject">Reject</button><button class="btn" data-a="edit">Edit</button><button class="btn pri" data-a="run">Run</button></span>`:`<span class="note">${c.pty?"Starting: the agent runs below.":"Starting: a run was launched for this idea. No terminal with your agent? Run it again."}</span><span class="dec"><button class="btn" data-a="run">Run again</button></span>`;
   foot.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==="archive"||a==="restore"){toggleArchive(c,a==="archive");return}const k=key(c);close();mode=a;modeKey=k;render()});return}
- if(!keepTab)tab=tabOf(c.status==="abandoned"?"plan":({1:"plan",2:"backlog",3:"review",4:"preview"})[c.column]||"request");
- // A run its agent is working on, in this board, opens on that agent.
- if(!keepTab&&c.pty&&c.pty.alive&&c.status==="running")tab=TABS.length;
+ if(!keepTab)lastTab=tab=c.status==="abandoned"?"plan":({1:"plan",2:"backlog",3:"review",4:"preview"})[c.column]||"request";
+ // A run its agent is working on in this board, while planning, building or reviewing, opens on that agent.
+ if(!keepTab&&c.pty&&c.pty.alive&&c.column>=1&&c.column<=3)tab="term";
  openRun(c,false)}
 // Notes are a chat: one entry per message, files attached by paste or picker.
 function parseNotes(src){const out=[];for(const raw of (src||"").split("\n")){const m=/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s?(.*)$/.exec(raw);if(m){out.push({at:m[1],text:m[2]});continue}const last=out[out.length-1];if(last)last.text+="\n"+raw.replace(/^\s{2}/,"");else if(raw.trim())out.push({at:"",text:raw})}return out.map(n=>({...n,text:n.text.trim()})).filter(n=>n.text)}
@@ -892,15 +894,19 @@ async function openRun(c,refresh,again){
  // A refresh while notes are being typed would wipe the textarea.
  const ta=$("pbody").querySelector(".notes textarea");if(refresh&&ta&&document.activeElement===ta)return;
  $("psub").textContent=c.id+" · "+(WORD[c.status]||c.status)+(c.awaiting?" · "+need(c.awaiting):"");
- // A card whose agent runs in the board gets its terminal as one more tab, chosen once
- // right after a launch from here.
- const tabs=c.pty?[...TABS,["Terminal","term"]]:TABS;
- if(c.pty&&wantTerm===key(c)){wantTerm=null;tab=TABS.length}
- if(tab>=tabs.length)tab=0;
- $("panel").classList.toggle("wide",tabs[tab][1]==="term");
- $("ptabs").innerHTML=tabs.map((t,i)=>`<button class="${i===tab?"on":""}" data-i="${i}">${t[0]}</button>`).join("");
- [...$("ptabs").children].forEach(b=>b.onclick=()=>{tab=+b.dataset.i;openRun(c,true)});
- const k=tabs[tab][1],doc=k==="preview"?(preview(runDoc.impl)&&attach(preview(runDoc.impl),c)):runDoc[k];
+ // Only tabs with something in them show. A card whose agent runs in the board gets its
+ // terminal behind the header's terminal button, chosen once right after a launch from here.
+ const tabs=TABS.filter(t=>t[1]==="request"||t[1]==="notes"||(t[1]==="preview"?preview(runDoc.impl):runDoc[t[1]]||t[1]==="backlog"&&c.column===2&&runDoc.progress));
+ if(c.pty&&wantTerm===key(c)){wantTerm=null;tab="term"}
+ if(tab==="term"&&!c.pty)tab=lastTab;
+ // A tab not written yet falls back to the latest one that is.
+ if(tab!=="term"&&!tabs.some(t=>t[1]===tab))tab=[...tabs].reverse().find(t=>t[1]!=="notes")[1];
+ if(tab!=="term")lastTab=tab;
+ $("panel").classList.toggle("wide",tab==="term");
+ const pt=$("pterm");pt.hidden=!c.pty;pt.classList.toggle("on",tab==="term");pt.setAttribute("aria-pressed",tab==="term");pt.onclick=()=>{tab=tab==="term"?lastTab:"term";openRun(c,true)};
+ $("ptabs").innerHTML=tabs.map(t=>`<button class="${t[1]===tab?"on":""}" data-k="${t[1]}">${t[0]}</button>`).join("");
+ [...$("ptabs").children].forEach(b=>b.onclick=()=>{tab=b.dataset.k;openRun(c,true)});
+ const k=tab,doc=k==="preview"?(preview(runDoc.impl)&&attach(preview(runDoc.impl),c)):runDoc[k];
  if(k!=="term")termStop();
  if(k==="term")showTerm(c);
  else if(k==="notes"){const ro=c.archived||c.status==="done"||c.status==="abandoned";
@@ -924,9 +930,9 @@ async function openRun(c,refresh,again){
   // gitBtn's buttons restyled as menu rows.
   const more=gitBtn(c).replace(/class="btn( pri)?"/g,"")+`<button data-a="archive">Archive</button><hr><button data-a="ab" class="danger">Abandon</button>`;
   foot.innerHTML=`<span class="note">${sent?"Sent to your agent.":APPROVAL[c.awaiting]+asks+" Answering here opens a new agent session."}</span><details class="more"><summary class="btn ghost">More</summary><div class="menu-pop">${more}</div></details><span class="dec"><button class="btn" data-a="revise"${sent?" disabled":""}>Revise</button><button class="btn pri" data-a="approve"${sent?" disabled":""}>${c.awaiting==="findings"?"Approve as-is":"Approve"}</button></span>`}
- else if(c.status==="waiting")foot.innerHTML=`<span class="note">Waiting on you: ${esc(need(c.awaiting))}. Answer in the ${c.pty&&c.pty.alive?"Terminal tab":"terminal running this run"}.</span>${arch}<button class="btn ghost" data-a="ab">Abandon</button>`;
+ else if(c.status==="waiting")foot.innerHTML=`<span class="note">Waiting on you: ${esc(need(c.awaiting))}. Answer in the ${c.pty&&c.pty.alive?"terminal (button at the top)":"terminal running this run"}.</span>${arch}<button class="btn ghost" data-a="ab">Abandon</button>`;
  else if(c.status==="done"||c.status==="abandoned")foot.innerHTML=arch;
- else foot.innerHTML=`<span class="note">${c.pty&&!c.pty.alive?"Its agent ended before the stage finished. Resume continues it here.":c.status==="stalled"?"No progress for a while. Resume it, or abandon it.":c.pty?"Running here: Terminal tab.":"Running in your agent."}</span>${arch}<button class="btn ghost" data-a="ab">Abandon run</button>${resumable(c)?`<button class="btn pri" data-a="resume">Resume</button>`:""}`;
+ else foot.innerHTML=`<span class="note">${c.pty&&!c.pty.alive?"Its agent ended before the stage finished. Resume continues it here.":c.status==="stalled"?"No progress for a while. Resume it, or abandon it.":c.pty?"Running here: terminal button at the top.":"Running in your agent."}</span>${arch}<button class="btn ghost" data-a="ab">Abandon run</button>${resumable(c)?`<button class="btn pri" data-a="resume">Resume</button>`:""}`;
  foot.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==="archive"||a==="restore"){toggleArchive(c,a==="archive");return}if(a==="push"){commitPush(c,"",b);return}if(a==="commit"){confirmCommit(c);return}if(a==="approve"){if(qs.length)confirmAnswers(c,qs);else decide(c,b);return}if(a==="revise"){confirmRevise(c);return}if(a==="resume"){resume(c,b);return}close();mode="reject";modeKey=key(c);render()})}
 // Answering an approval from the panel opens your agent on the run, told the decision and,
 // for a revise, the comment. Answered approvals are remembered outside the footer, which
@@ -971,7 +977,7 @@ function deep(){const p=new URLSearchParams(location.search),d=p.get("dir"),id=p
  if(!c){toast(id?"That run is not on this board":"That idea is not on this board");return}
  const m=/^(finding|backlog)-(\d+)$/.exec(p.get("item")||"");
  // An item's tab is its own when the link does not name one.
- const n=p.get("tab")||(m?(m[1]==="finding"?"review":"backlog"):""),t=tabOf(n==="work"?"impl":n);if(t>=0)tab=t;hit=m?{type:m[1],n:+m[2],k:key(c)}:null;open(c,t>=0)}
+ const n=p.get("tab")||(m?(m[1]==="finding"?"review":"backlog"):""),t=TABS.find(x=>x[1]===(n==="work"?"impl":n));if(t)tab=t[1];hit=m?{type:m[1],n:+m[2],k:key(c)}:null;open(c,!!t)}
 // What md() leaves of a line as text: no backticks or stars, a link reduced to its words.
 function mark(h){hit=null;const flat=t=>String(t).replace(/!?\[([^\]]*)\]\([^)\s]+\)/g,"$1").replace(/[`*]/g,"").replace(/\s+/g," ").trim();
  const b=[...(runDoc.backlog||"").matchAll(/^\s*-\s*(?:open|done|rejected):\s*(.*)$/gm)];
@@ -1072,7 +1078,7 @@ const groups=rows=>{const m=new Map();for(const r of rows){if(!m.has(r.group))m.
 let setQ="";
 async function openSettings(){
  stopDictation(true);
- termStop();openKey=null;runDoc=null;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent="Settings";$("ptabs").innerHTML="";$("pfoot").innerHTML="";
+ termStop();openKey=null;runDoc=null;$("pterm").hidden=true;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent="Settings";$("ptabs").innerHTML="";$("pfoot").innerHTML="";
  const cur=document.documentElement.dataset.theme||"system";
  const cfg=await fetch("/settings").then(r=>r.json()).catch(()=>null);
  $("psub").textContent="Theme applies to this browser. Everything else is saved to your kaizen settings.";$("psub").title=cfg?cfg.file:"";
@@ -1154,7 +1160,7 @@ async function openSources(){
  const iceDraft=srcOpen()&&$("ice-title")?[$("ice-title").dataset.k,$("ice-title").value,$("ice-details").value]:null;
  // And a category typed on a row but not yet saved.
  const cats=new Map(srcOpen()?[...$("pbody").querySelectorAll("[data-ct]")].map(m=>[m.dataset.k,m.value]):[]);
- termStop();openKey=null;runDoc=null;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=SRC;$("ptabs").innerHTML="";$("pfoot").innerHTML="";
+ termStop();openKey=null;runDoc=null;$("pterm").hidden=true;$("panel").classList.add("open");$("scrim").classList.add("on");$("ptitle").textContent=SRC;$("ptabs").innerHTML="";$("pfoot").innerHTML="";
  $("psub").textContent="Requests gathered from your sources wait here until you promote them to Ideas or dismiss them; nothing starts on its own.";$("psub").title="";
  const dir=all?null:S.dir,q=dir?"?dir="+encodeURIComponent(dir):"";
  const d=await fetch("/sources"+q).then(r=>r.json()).catch(()=>null);
@@ -1396,7 +1402,7 @@ document.onkeydown=e=>{
  const mv={ArrowUp:[0,-1],k:[0,-1],ArrowDown:[0,1],j:[0,1],ArrowLeft:[-1,0],h:[-1,0],ArrowRight:[1,0],l:[1,0]}[e.key];
  // In a run's panel: left/right between its tabs, up/down scroll it. Other panels keep the browser's arrows.
  const rc=mv&&openKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&S.cards.find(c=>key(c)===openKey&&c.kind==="run");
- if(rc&&$("ptabs").children.length){e.preventDefault();if(mv[0]){const t=Math.max(0,Math.min($("ptabs").children.length-1,tab+mv[0]));if(t!==tab){tab=t;openRun(rc,true)}}else $("pbody").scrollBy({top:mv[1]*40});return}
+ if(rc&&$("ptabs").children.length){e.preventDefault();if(mv[0]){const ks=[...$("ptabs").children].map(b=>b.dataset.k).concat($("pterm").hidden?[]:["term"]),i=ks.indexOf(tab),t=ks[i<0?(mv[0]>0?0:ks.length-1):Math.max(0,Math.min(ks.length-1,i+mv[0]))];if(t!==tab){tab=t;openRun(rc,true)}}else $("pbody").scrollBy({top:mv[1]*40});return}
  if(mv&&!$("panel").classList.contains("open")&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&(e.target===document.body||e.target.matches("#board .card"))){e.preventDefault();nav(...mv);return}
  // The open card, else the focused one.
  const ok=openKey||focusedKey(),oc=ok&&S.cards.find(c=>key(c)===ok);if(!oc)return;
