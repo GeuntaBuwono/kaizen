@@ -1,7 +1,8 @@
 // Everything kaizen knows about a project's state, read from and written to the
 // `.kaizen/` directory. No terminal, no HTTP: the TUI (`dashboard.ts`) and the web
 // board (`web.ts`) both import this and draw it their own way.
-import { existsSync, readFileSync, readdirSync, appendFileSync, writeFileSync, mkdirSync, statSync, realpathSync, rmSync, renameSync, copyFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, appendFileSync, writeFileSync, mkdirSync, statSync, realpathSync, rmSync, renameSync, copyFileSync, openSync, readSync, closeSync } from "node:fs";
+import { Database } from "bun:sqlite";
 import { join, dirname, win32, posix } from "node:path";
 import { homedir, arch, cpus, release, totalmem, version as osVersion } from "node:os";
 import { startPty, ptySupported } from "./pty.ts";
@@ -988,17 +989,120 @@ export function manualCommand(projectDir: string, agentCmd: string, prompt: stri
 // project's state dir ({run, text, cmd, model, sessionId, started}) and `<key>.pid`, which
 // the agent writes itself. Only these are ever closed or resumed: a session the user
 // opened by hand has no record.
-export type Session = { key: string; run: string | null; text: string; cmd: string; model?: string | null; yolo?: boolean; sessionId: string | null; started: number };
+export type Session = { key: string; run: string | null; text: string; cmd: string; model?: string | null; yolo?: boolean; resumed?: boolean; sessionId: string | null; started: number };
 
-// Tools that take a conversation id at launch and resume it by that id. Every other
-// tool gets a fresh session on each decision, as before.
-const SESSION_FLAGS: Record<string, { start: (id: string) => string[]; resume: (id: string) => string[]; transcript: (cwd: string, id: string) => string }> = {
+// How each tool resumes a conversation by id. `start`: the tool takes an id kaizen
+// picks at launch. Without it the tool picks its own, and `find` reads it from the
+// tool's own files later: the first conversation it began in this folder after the
+// launch, before the next launch of the tool here and within FIND_WINDOW_MS, that no
+// other record holds. `has`: that conversation is still on disk.
+// Any tool not listed here gets a fresh session on each decision.
+type SessionFlags = {
+  start?: (id: string) => string[];
+  resume: (id: string) => string[];
+  has: (cwd: string, id: string) => boolean;
+  find?: (cwd: string, since: number, until: number, taken: Set<string>) => string | null;
+};
+const ls = (dir: string) => { try { return readdirSync(dir); } catch { return []; } };
+const SLACK_MS = 2000;
+// A launch's conversation begins within this of it; a trust or login prompt can hold it up.
+// Later than that it is one the user opened by hand.
+const FIND_WINDOW_MS = 10 * 60_000;
+const SESSION_FLAGS: Record<string, SessionFlags> = {
   claude: {
     start: (id) => ["--session-id", id],
     resume: (id) => ["--resume", id],
-    transcript: (cwd, id) => join(process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude"), "projects", cwd.replace(/[^A-Za-z0-9]/g, "-"), `${id}.jsonl`),
+    has: (cwd, id) => existsSync(join(process.env.CLAUDE_CONFIG_DIR ?? join(home, ".claude"), "projects", cwd.replace(/[^A-Za-z0-9]/g, "-"), `${id}.jsonl`)),
+  },
+  gemini: {
+    start: (id) => ["--session-id", id],
+    resume: (id) => ["--resume", id],
+    // ~/.gemini/tmp/<project>/chats/session-<time>-<first 8 of id>.jsonl, <project> a name
+    // from Gemini's own registry, so every project folder is looked in.
+    has: (_cwd, id) => {
+      const tmp = join(process.env.GEMINI_CLI_HOME || home, ".gemini", "tmp");
+      return ls(tmp).some((p) => ls(join(tmp, p, "chats")).some((f) => f.startsWith("session-") && /\.jsonl?$/.test(f) && f.replace(/\.jsonl?$/, "").endsWith("-" + id.slice(0, 8))));
+    },
+  },
+  codex: {
+    resume: (id) => ["resume", id],
+    // sessions/YYYY/MM/DD/rollout-<time>-<id>.jsonl, its first line {timestamp, payload: {cwd}}.
+    has: (_cwd, id) => codexRollouts(0).some((f) => f.endsWith(`-${id}.jsonl`)),
+    find: (cwd, since, until, taken) => {
+      let best: string | null = null, at = until;
+      for (const f of codexRollouts(since - 86_400_000)) {
+        const id = /-([0-9a-f-]{36})\.jsonl$/.exec(f)?.[1];
+        if (!id || taken.has(id)) continue;
+        const head = headOf(f);
+        const t = Date.parse(/"timestamp":"([^"]+)"/.exec(head)?.[1] ?? "");
+        const c = /"cwd":("(?:[^"\\]|\\.)*")/.exec(head)?.[1];
+        try { if (c && JSON.parse(c) === cwd && t >= since - SLACK_MS && t < at) { best = id; at = t; } } catch { /* not a rollout */ }
+      }
+      return best;
+    },
+  },
+  agy: {
+    resume: (id) => ["--conversation", id],
+    has: (_cwd, id) => existsSync(join(agyConversations(), `${id}.db`)),
+    // conversations/<id>.db, created when the conversation begins, its folder written
+    // into the metadata blob as file://<cwd>. history.jsonl misses an `agy -i` launch.
+    find: (cwd, since, until, taken) => {
+      let best: string | null = null, at = until;
+      for (const f of ls(agyConversations())) {
+        const id = f.endsWith(".db") ? f.slice(0, -3) : "";
+        if (!id || taken.has(id)) continue;
+        try {
+          const st = statSync(join(agyConversations(), f)), born = st.birthtimeMs || st.mtimeMs;
+          if (born < since - SLACK_MS || born >= at) continue;
+          const db = new Database(join(agyConversations(), f), { readonly: true });
+          try {
+            const blob = Buffer.from((db.query("select data from trajectory_metadata_blob where id = 'main'").get() as any)?.data ?? []).toString("utf8");
+            const i = blob.indexOf("file://" + cwd), next = blob.charCodeAt(i + 7 + cwd.length);
+            if (i >= 0 && !(next >= 0x20 && next !== 0x22)) { best = id; at = born; }
+          } finally { db.close(); }
+        } catch { /* not a conversation kaizen can read */ }
+      }
+      return best;
+    },
+  },
+  opencode: {
+    resume: (id) => ["--session", id],
+    has: (_cwd, id) => opencodeRows("select id from session where id = ?", id).length > 0,
+    find: (cwd, since, until, taken) =>
+      opencodeRows("select id from session where directory = ? and time_created >= ? and time_created < ? and parent_id is null order by time_created", cwd, since - SLACK_MS, until).find((id) => !taken.has(id)) ?? null,
   },
 };
+
+// The rollout files in day folders on or after `since`'s local date (codex names them so).
+function codexRollouts(since: number): string[] {
+  const root = join(process.env.CODEX_HOME || join(home, ".codex"), "sessions");
+  const d = new Date(since), from = since ? `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}` : "";
+  const out: string[] = [];
+  for (const y of ls(root)) for (const m of ls(join(root, y))) for (const day of ls(join(root, y, m))) {
+    if (`${y}/${m}/${day}` < from) continue;
+    for (const f of ls(join(root, y, m, day))) if (f.startsWith("rollout-") && f.endsWith(".jsonl")) out.push(join(root, y, m, day, f));
+  }
+  return out;
+}
+
+// A rollout's first line can carry the whole system prompt: read only its start.
+function headOf(f: string): string {
+  try {
+    const fd = openSync(f, "r");
+    try { const b = Buffer.alloc(4096); return b.toString("utf8", 0, readSync(fd, b, 0, 4096, 0)); } finally { closeSync(fd); }
+  } catch { return ""; }
+}
+
+const agyConversations = () => join(home, ".gemini", "antigravity-cli", "conversations");
+
+function opencodeRows(sql: string, ...args: (string | number)[]): string[] {
+  const f = join(process.env.XDG_DATA_HOME || join(home, ".local", "share"), "opencode", "opencode.db");
+  if (!existsSync(f)) return [];
+  try {
+    const db = new Database(f, { readonly: true });
+    try { return db.query(sql).all(...args).map((r: any) => r.id); } finally { db.close(); }
+  } catch { return []; }
+}
 
 export const CLOSE_GRACE_MS = 2 * 60_000;
 const sessionsDir = (st: string) => join(st, "sessions");
@@ -1067,7 +1171,10 @@ function isSession(pid: number, s: Session): boolean {
     // etime is [[dd-]hh:]mm:ss
     const [d, rest] = m[1].includes("-") ? m[1].split("-") : ["0", m[1]];
     const secs = rest.split(":").reduce((a, n) => a * 60 + Number(n), 0) + Number(d) * 86400;
-    return Date.now() - secs * 1000 >= s.started - 2000 && m[2].includes(s.cmd) && (!s.sessionId || m[2].includes(s.sessionId));
+    // The id is in its arguments only where the launch put it there: not a codex, agy
+    // or opencode start, whose id is read from the tool's files afterwards.
+    const idInArgs = s.sessionId && (SESSION_FLAGS[s.cmd]?.start || s.resumed);
+    return Date.now() - secs * 1000 >= s.started - 2000 && m[2].includes(s.cmd) && (!idInArgs || m[2].includes(s.sessionId!));
   } catch {
     return false;
   }
@@ -1119,11 +1226,30 @@ export function sweepSessions(st: string, now: number) {
 }
 
 // The run's conversation to continue: its first recorded one, on this tool, whose
-// transcript is still on disk. None means a fresh session, never a guess.
+// conversation is still on disk. A record whose tool picked its own id gets it looked
+// up here, once, and written back so no later record can claim it. None means a fresh
+// session, never a guess.
+// ponytail: a conversation that begins only after the tool's next launch here is given up (a fresh session), never handed to the wrong run; record a launch marker in the prompt if that bites
 export function firstSession(st: string, id: string, cmd: string, cwd: string): Session | null {
   const f = SESSION_FLAGS[cmd];
   if (!f) return null;
-  return readSessions(st).find((s) => s.sessionId && s.cmd === cmd && ownerOf(st, s) === id && existsSync(f.transcript(cwd, s.sessionId))) ?? null;
+  const all = readSessions(st);
+  const taken = new Set(all.flatMap((s) => (s.sessionId ? [s.sessionId] : [])));
+  for (const s of all) {
+    if (s.cmd !== cmd || ownerOf(st, s) !== id) continue;
+    if (!s.sessionId && f.find) {
+      // Before the tool's next launch here, any run's: from then on a conversation may be that launch's.
+      const next = all.find((o) => o.cmd === cmd && o.started > s.started)?.started ?? Infinity;
+      const found = f.find(cwd, s.started, Math.min(next, s.started + FIND_WINDOW_MS), taken);
+      if (!found) continue;
+      taken.add(found);
+      s.sessionId = found;
+      const { key, ...rec } = s;
+      try { writeFileSync(join(sessionsDir(st), key + ".json"), JSON.stringify(rec) + "\n"); } catch { /* found again next time */ }
+    }
+    if (s.sessionId && f.has(cwd, s.sessionId)) return s;
+  }
+  return null;
 }
 
 // The tool and model a run was started with: its latest recorded launch, else the
@@ -1146,12 +1272,14 @@ export function sessionLaunch(projectDir: string, cmd: string, base: string[], p
   if (!existsSync(st)) return { fullCmd: [...base, ...promptArgs(cmd, prompt)], key: undefined, pidFile: undefined, record: undefined };
   const f = SESSION_FLAGS[cmd];
   const prev = run ? firstSession(st, run, cmd, projectDir) : null;
-  const sessionId = f ? prev?.sessionId ?? crypto.randomUUID() : null;
-  const fullCmd = [...base, ...(f && sessionId ? (prev ? f.resume(sessionId) : f.start(sessionId)) : []), ...promptArgs(cmd, prompt)];
+  const sessionId = prev?.sessionId ?? (f?.start ? crypto.randomUUID() : null);
+  const ids = f && sessionId ? (prev ? f.resume(sessionId) : f.start!(sessionId)) : [];
+  // Right after the binary: codex resumes through a subcommand, ahead of its flags.
+  const fullCmd = [base[0], ...ids, ...base.slice(1), ...promptArgs(cmd, prompt)];
   const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   mkdirSync(sessionsDir(st), { recursive: true });
   const record = join(sessionsDir(st), key + ".json");
-  writeFileSync(record, JSON.stringify({ run: run ?? null, text, cmd, model: model ?? null, ...(yolo ? { yolo: true } : {}), sessionId, started: Date.now() }) + "\n");
+  writeFileSync(record, JSON.stringify({ run: run ?? null, text, cmd, model: model ?? null, ...(yolo ? { yolo: true } : {}), ...(prev ? { resumed: true } : {}), sessionId, started: Date.now() }) + "\n");
   return { fullCmd, key, pidFile: join(sessionsDir(st), key + ".pid"), record };
 }
 

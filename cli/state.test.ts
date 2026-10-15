@@ -650,7 +650,7 @@ test("sessionLaunch: claude gets a conversation id, a decision resumes it while 
     const idea = sessionLaunch(p, "claude", ["/bin/claude", "--model", "opus"], "/kaizen tidy logs", "tidy logs");
     const [rec] = readSessions(st);
     expect(rec.sessionId).toMatch(/^[0-9a-f-]{36}$/);
-    expect(idea.fullCmd).toEqual(["/bin/claude", "--model", "opus", "--session-id", rec.sessionId!, "/kaizen tidy logs"]);
+    expect(idea.fullCmd).toEqual(["/bin/claude", "--session-id", rec.sessionId!, "--model", "opus", "/kaizen tidy logs"]);
     expect(idea.pidFile).toBe(join(st, "sessions", rec.key + ".pid"));
     newRun(p, "2026-10-01-tidy-logs", "/kaizen tidy logs");
     expect(ownerOf(st, rec)).toBe("2026-10-01-tidy-logs");
@@ -667,7 +667,7 @@ test("sessionLaunch: claude gets a conversation id, a decision resumes it while 
     expect(back.fullCmd).toEqual(["/bin/claude", "--resume", rec.sessionId!, "/kaizen run x: approved"]);
     expect(readSessions(st).filter((r) => r.run === "2026-10-01-tidy-logs" && r.sessionId === rec.sessionId)).toHaveLength(1);
 
-    // Another tool's record never resumes; codex takes no id at all.
+    // Another tool's record never resumes; codex takes no id at launch.
     expect(sessionLaunch(p, "codex", ["/bin/codex"], "/kaizen run x: approved", "x", "2026-10-01-tidy-logs").fullCmd).toEqual(["/bin/codex", "/kaizen run x: approved"]);
   } finally {
     saved === undefined ? delete process.env.CLAUDE_CONFIG_DIR : (process.env.CLAUDE_CONFIG_DIR = saved);
@@ -709,6 +709,109 @@ test("findTerminal records the agent's PID: a POSIX wrapper that execs it, a Pow
     Object.defineProperty(process, "platform", platform);
     keys.forEach((k, i) => (saved[i] === undefined ? delete process.env[k] : (process.env[k] = saved[i])));
     rmSync(bin, { recursive: true, force: true });
+  }
+});
+
+test.skipIf(process.platform === "win32")("sessionLaunch: gemini, codex, agy and opencode resume the run's own conversation, found in each tool's own files", () => {
+  // agy's files sit under the home bound at import, so this runs in a child with a scratch HOME.
+  const home = mkdtempSync(join(tmpdir(), "kz-home-"));
+  const script = `const S = await import(${JSON.stringify(join(dirname(import.meta.path), "state.ts"))});
+const fs = require("node:fs"), { join, dirname } = require("node:path"), { Database } = require("bun:sqlite");
+const H = process.env.HOME, P = join(H, "proj"), st = join(P, ".kaizen"), out = {};
+const put = (f, t) => { fs.mkdirSync(dirname(f), { recursive: true }); fs.writeFileSync(f, t); };
+for (const r of ["r1", "r2", "r3"]) { put(join(st, "runs", r, "00-request.md"), "x"); put(join(st, "runs", r, "state.json"), "{}"); }
+const go = (cmd, run = "r1", base = [cmd]) => S.sessionLaunch(P, cmd, base, "/kaizen x", "x", run).fullCmd;
+const iso = (ms) => new Date(ms).toISOString();
+
+// gemini: its id is picked at launch, resumed once its chat file exists.
+const g1 = go("gemini"), gid = g1[2];
+out.gemini = [g1[1], go("gemini")[1], go("gemini")[2] === gid];
+put(join(H, ".gemini", "tmp", "proj", "chats", "session-2026-10-15T10-00-" + gid.slice(0, 8) + ".jsonl"), "{}");
+out.gemini.push(go("gemini"));
+
+// codex: its own id, read from the rollout the launch began in this folder.
+const now = Date.now(), d = new Date(now);
+const day = join(H, ".codex", "sessions", String(d.getFullYear()), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0"));
+const roll = (id, t, cwd) => put(join(day, "rollout-x-" + id + ".jsonl"), JSON.stringify({ timestamp: iso(t), type: "session_meta", payload: { id, cwd, base_instructions: { text: "y".repeat(9000) } } }) + "\\n");
+const A = "00000000-0000-7000-8000-00000000000a", B = "00000000-0000-7000-8000-00000000000b";
+roll("00000000-0000-7000-8000-0000000000e0", now - 60_000, P);          // before any launch
+go("codex", "r3");                                                      // its agent never began one
+await Bun.sleep(10);
+const c1 = go("codex");
+await Bun.sleep(10);
+roll("00000000-0000-7000-8000-0000000000e1", Date.now(), join(H, "else")); // another folder
+roll(A, Date.now(), P);
+await Bun.sleep(10);
+go("codex", "r2");
+await Bun.sleep(10);
+roll(B, Date.now(), P);
+await Bun.sleep(10);
+// r3, asked first, never takes r1's or r2's: a conversation begun after the tool's next launch is not its.
+const r3 = go("codex", "r3");
+out.codex = [c1, go("codex", "r1", ["codex", "-m", "gpt-5"]), go("codex", "r2"), r3];
+
+// agy: the conversation database created after the launch with this folder in its metadata.
+go("agy");
+const conv = join(H, ".gemini", "antigravity-cli", "conversations");
+const agyDb = (id, folder) => {
+  fs.mkdirSync(conv, { recursive: true });
+  const d = new Database(join(conv, id + ".db"));
+  d.run("create table trajectory_metadata_blob (id text, data blob)");
+  d.run("insert into trajectory_metadata_blob values ('main', ?)", [Buffer.from("\\n'file://" + folder + "\\x12'file://" + folder + "\\x1a")]);
+  d.close();
+};
+agyDb("agy-else", join(H, "else"));
+agyDb("agy-sibling", P + "-bot");          // a folder whose name starts with this one
+put(join(conv, "agy-broken.db"), "not a database");
+out.agy = [go("agy")];
+agyDb("agy-mine", P);
+out.agy.push(go("agy"));
+
+// opencode: a broken database is a fresh session; a real one names the conversation.
+go("opencode");
+put(join(H, ".local", "share", "opencode", "opencode.db"), "not a database");
+out.opencode = [go("opencode")];
+fs.rmSync(join(H, ".local", "share", "opencode", "opencode.db"));
+const db = new Database(join(H, ".local", "share", "opencode", "opencode.db"));
+db.run("create table session (id text primary key, directory text, time_created integer, parent_id text)");
+const t = Date.now();
+for (const [id, dir, at, parent] of [["ses_old", P, t - 60_000, null], ["ses_child", P, t, "ses_x"], ["ses_else", join(H, "else"), t, null], ["ses_mine", P, t + 1, null]]) db.run("insert into session values (?, ?, ?, ?)", [id, dir, at, parent]);
+db.close();
+out.opencode.push(go("opencode"));
+console.log(JSON.stringify(out));`;
+  try {
+    const p = Bun.spawnSync(["bun", "-e", script], { cwd: home, env: { ...process.env, HOME: home, CODEX_HOME: "", XDG_DATA_HOME: "", GEMINI_CLI_HOME: "", CLAUDE_CONFIG_DIR: "" } });
+    if (p.exitCode !== 0) throw new Error(p.stderr.toString());
+    const out = JSON.parse(p.stdout.toString());
+    const [startFlag, freshFlag, sameId, gResume] = out.gemini;
+    expect([startFlag, freshFlag, sameId]).toEqual(["--session-id", "--session-id", false]);
+    expect(gResume[1]).toBe("--resume");
+    expect(out.codex).toEqual([
+      ["codex", "/kaizen x"],
+      ["codex", "resume", "00000000-0000-7000-8000-00000000000a", "-m", "gpt-5", "/kaizen x"],
+      ["codex", "resume", "00000000-0000-7000-8000-00000000000b", "/kaizen x"],
+      ["codex", "/kaizen x"],
+    ]);
+    expect(out.agy).toEqual([["agy", "-i", "/kaizen x"], ["agy", "--conversation", "agy-mine", "-i", "/kaizen x"]]);
+    expect(out.opencode).toEqual([["opencode", "--prompt", "/kaizen x"], ["opencode", "--session", "ses_mine", "--prompt", "/kaizen x"]]);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test.skipIf(process.platform === "win32")("closeSessions still ends a codex launch whose id was read from its files afterwards", async () => {
+  const p = sessionProject(), st = join(p, ".kaizen"), dir = join(st, "sessions");
+  newRun(p, "2026-10-01-a", "/kaizen a");
+  mkdirSync(dir, { recursive: true });
+  // Launched as `codex <prompt>`: the id found later is not in its arguments.
+  writeFileSync(join(dir, "c.json"), JSON.stringify({ run: "2026-10-01-a", text: "a", cmd: "codex", sessionId: "found-later", started: Date.now() - 5000 }));
+  const pr = Bun.spawn(["sh", "-c", 'echo $$ > "$0"; exec "$@"', join(dir, "c.pid"), "sh", "-c", "sleep 30; :", "codex"], { stdout: "ignore", stderr: "ignore" });
+  for (let i = 0; i < 100 && !existsSync(join(dir, "c.pid")); i++) await Bun.sleep(20);
+  try {
+    expect(closeSessions(st, "2026-10-01-a")).toBe(1);
+    expect(await pr.exited).not.toBe(0);
+  } finally {
+    pr.kill();
   }
 });
 
