@@ -930,13 +930,16 @@ async function openRun(c,refresh,again){
  // A plan that asks questions takes their answers with the approval.
  // One the board cannot read is said, so it is answered in the terminal instead of skipped.
  const pq=c.status==="waiting"&&c.awaiting==="approvals.plan"?planQuestions(runDoc.plan):[],qs=pq||[];
+ // Its in-card agent ended on a waiting or done run: reopen that conversation, nothing sent.
+ const rs=c.pty&&!c.pty.alive?`<button class="btn" data-a="resume">Resume session</button>`:"";
  if(c.archived)foot.innerHTML=arch;
  else if((c.status==="waiting"||c.awaiting==="findings")&&APPROVAL[c.awaiting]){const sent=decided.has(answer(c)),asks=!pq?" It has open questions the board cannot show: answer them in the terminal running this run, or approve and your agent asks them.":qs.length?` It asks ${qs.length===1?"one question":qs.length+" questions"}: Approve opens ${qs.length===1?"it":"them"}.`:"";
   // gitBtn's buttons restyled as menu rows.
   const more=gitBtn(c).replace(/class="btn( pri)?"/g,"")+`<button data-a="archive">Archive</button><hr><button data-a="ab" class="danger">Abandon</button>`;
-  foot.innerHTML=`<span class="note">${sent?"Sent to your agent.":APPROVAL[c.awaiting]+asks+" Answering here opens a new agent session."}</span><details class="more"><summary class="btn ghost">More</summary><div class="menu-pop">${more}</div></details><span class="dec"><button class="btn" data-a="revise"${sent?" disabled":""}>Revise</button><button class="btn pri" data-a="approve"${sent?" disabled":""}>${c.awaiting==="findings"?"Approve as-is":"Approve"}</button></span>`}
- else if(c.status==="waiting")foot.innerHTML=`<span class="note">Waiting on you: ${esc(need(c.awaiting))}. Answer in the ${c.pty&&c.pty.alive?"terminal (button at the top)":"terminal running this run"}.</span>${arch}<button class="btn ghost" data-a="ab">Abandon</button>`;
- else if(c.status==="done"||c.status==="abandoned")foot.innerHTML=arch;
+  foot.innerHTML=`<span class="note">${sent?"Sent to your agent.":APPROVAL[c.awaiting]+asks+" Answering here opens a new agent session."}</span><details class="more"><summary class="btn ghost">More</summary><div class="menu-pop">${more}</div></details>${rs}<span class="dec"><button class="btn" data-a="revise"${sent?" disabled":""}>Revise</button><button class="btn pri" data-a="approve"${sent?" disabled":""}>${c.awaiting==="findings"?"Approve as-is":"Approve"}</button></span>`}
+ else if(c.status==="waiting")foot.innerHTML=`<span class="note">Waiting on you: ${esc(need(c.awaiting))}. Answer in the ${c.pty&&c.pty.alive?"terminal (button at the top)":"terminal running this run"}.</span>${arch}<button class="btn ghost" data-a="ab">Abandon</button>${rs}`;
+ else if(c.status==="done")foot.innerHTML=arch+rs;
+ else if(c.status==="abandoned")foot.innerHTML=arch;
  else foot.innerHTML=`<span class="note">${c.pty&&!c.pty.alive?"Its agent ended before the stage finished. Resume continues it here.":c.status==="stalled"?"No progress for a while. Resume it, or abandon it.":c.pty?"":"Running in your agent."}</span>${arch}<button class="btn ghost" data-a="ab">Abandon run</button>${resumable(c)?`<button class="btn pri" data-a="resume">Resume</button>`:""}`;
  foot.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==="archive"||a==="restore"){toggleArchive(c,a==="archive");return}if(a==="push"){commitPush(c,"",b);return}if(a==="commit"){confirmCommit(c);return}if(a==="approve"){if(qs.length)confirmAnswers(c,qs);else decide(c,b);return}if(a==="revise"){confirmRevise(c);return}if(a==="resume"){resume(c,b);return}close();mode="reject";modeKey=key(c);render()})}
 // Answering an approval from the panel opens your agent on the run, told the decision and,

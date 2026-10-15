@@ -12,7 +12,7 @@ updated: 2026-10-15
 ## Where it lives
 - `cli/web.ts` — the server: routes such as `/state`, `/run`, `/decide`, `/fix`, `/commit`, `/events`, `/vault`, `/pty`.
 - `cli/state.ts` — everything kaizen knows about a project's `.kaizen/`, shared with the [[Terminal board]]: runs, cards, findings, backlog, git, launching agents.
-- `cli/pty.ts` + `web/term.ts` — the in-card terminal (agent runs inside the board).
+- `cli/pty.ts` + `web/term.ts` — the in-card terminal (agent runs inside the board). When that agent ends, the footer offers Resume: `/resume` continues an in-flight run with a prompt, and on a waiting or done run reopens its conversation with nothing sent (refused when none is on disk).
 - `web/board.html` — the page.
 
 ## How it connects

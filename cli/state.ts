@@ -77,7 +77,8 @@ export const YOLO_FLAGS: Record<string, string[]> = {
 // How each tool takes the opening prompt and stays interactive. agy refuses a bare
 // argument and exits; opencode reads one as the project folder to open.
 const PROMPT_FLAGS: Record<string, string[]> = { agy: ["-i"], opencode: ["--prompt"] };
-export const promptArgs = (cmd: string, prompt: string) => [...(PROMPT_FLAGS[cmd] ?? []), prompt];
+// No prompt: the tool opens waiting for the user (a resumed conversation picked up as-is).
+export const promptArgs = (cmd: string, prompt: string) => prompt ? [...(PROMPT_FLAGS[cmd] ?? []), prompt] : [];
 
 // A model typed on the board reaches launch lines and the manual command as text, so
 // only a plain name is taken: no spaces, quotes, `$`, `;`, backticks or globs.
@@ -976,13 +977,13 @@ export function projectOf(from: string) {
 }
 
 export function manualCommand(projectDir: string, agentCmd: string, prompt: string, flags: string[] = []) {
-  const bin = [agentCmd, ...flags, ...(PROMPT_FLAGS[agentCmd] ?? [])].join(" ");
+  const bin = [agentCmd, ...flags, ...(prompt ? PROMPT_FLAGS[agentCmd] ?? [] : [])].join(" ");
   // Pasted into whatever shell the user has. fish reads \' and \\ inside single
   // quotes as escapes, so ' and \ each go in double quotes, which sh and fish read alike.
   const q = (a: string) => `'${a.replace(/['\\]/g, (ch) => (ch === "'" ? `'"'"'` : `'"\\\\"'`))}'`;
   return process.platform === "win32"
-    ? `cd '${projectDir}'; & ${bin} '${prompt.replace(/'/g, "''")}'`
-    : `cd ${q(projectDir)} && ${bin} ${q(prompt)}`;
+    ? `cd '${projectDir}'; & ${bin}${prompt ? ` '${prompt.replace(/'/g, "''")}'` : ""}`
+    : `cd ${q(projectDir)} && ${bin}${prompt ? ` ${q(prompt)}` : ""}`;
 }
 
 // Agent sessions kaizen opened. Each launch leaves `sessions/<key>.json` in the
@@ -1315,7 +1316,8 @@ export function launchRun(it: Item, from: string, run?: string, pick: { agent?: 
   if (agent.cmd === "claude") trustFolder(projectDir);
   // onPath, not Bun.which: the board may have taken a login shell's PATH after it started.
   const agentBin = onPath(agent.cmd) ?? agent.cmd;
-  const prompt = requestOf(it.where ? `/kaizen ${it.text} (${it.where})` : `/kaizen ${it.text}`, it.notes, from);
+  // No text: a run's conversation reopened as it was, with nothing sent to it.
+  const prompt = !it.text ? "" : requestOf(it.where ? `/kaizen ${it.text} (${it.where})` : `/kaizen ${it.text}`, it.notes, from);
   const wanted = pick.model ?? (own?.cmd === agent.cmd ? own.model : null) ?? undefined;
   const model = wanted && plainModel(wanted) ? wanted : undefined;
   // Yolo was picked for one tool; a fallback to another opens in its normal mode.

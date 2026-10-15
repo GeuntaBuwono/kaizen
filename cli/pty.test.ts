@@ -1,7 +1,7 @@
 // The in-card agent (agent.launch: card): the setting, and the real board running a
 // fake agent in a pseudo-terminal, reached only from its own origin.
 import { test, expect } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { launchMode, closeSessions, readSessions } from "./state.ts";
@@ -104,7 +104,27 @@ test.skipIf(process.platform === "win32")("the board runs the agent in the card:
     await new Promise((ok, no) => { ws2.onopen = ok; ws2.onerror = no; });
     await until(new RegExp(`args:.*--resume ${s!.sessionId} .*/kaizen run r1: continue`));
     expect((await resume()).status).toBe(409);
-    ws2.close();
+
+    // Its agent ended while the run waits on a decision: the conversation reopens with
+    // nothing sent to it. With no conversation on disk, a done run is refused, never a blank session.
+    const ended2 = new Promise((ok) => { ws2.onclose = ok; });
+    expect(closeSessions(st, "r1")).toBe(1);
+    await ended2;
+    writeFileSync(join(st, "runs", "r1", "state.json"), JSON.stringify({ id: "r1", stage: "plan", awaiting: "approvals.plan" }));
+    const quiet = await resume();
+    expect(quiet).toMatchObject({ status: 200, ok: true });
+    seen = "";
+    const ws3 = new WebSocket(`${at}/pty?key=${quiet.pty}`.replace("http", "ws"), { headers: { origin: at } } as any);
+    ws3.onmessage = (e) => { seen += String(e.data); };
+    await new Promise((ok, no) => { ws3.onopen = ok; ws3.onerror = no; });
+    await until(new RegExp(`args:.*--resume ${s!.sessionId}`));
+    expect(seen).not.toContain("/kaizen");
+    const ended3 = new Promise((ok) => { ws3.onclose = ok; });
+    expect(closeSessions(st, "r1")).toBe(1);
+    await ended3;
+    rmSync(join(tr, s!.sessionId + ".jsonl"));
+    writeFileSync(join(st, "runs", "r1", "state.json"), JSON.stringify({ id: "r1", stage: "done", awaiting: null }));
+    expect(await resume()).toMatchObject({ status: 409, error: "no conversation of this run to resume" });
   } finally { proc.kill(); await proc.exited; }
 }, 30_000);
 

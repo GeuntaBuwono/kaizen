@@ -7,7 +7,7 @@ import {
   readInbox, writeInbox, replaceIdea, moveIdea, abandonRun, launchRun, parseItem, agentChoices, projectOf, KNOWN_AGENTS, plainModel, short, setArchived, writeNotes,
   appendNote, saveAttachment, pidOnPort, readText, cmdExe, sysExe, powershellExe, runGit, cardsGit, readCommit, commitPush, notice, notifier, LOGO,
   reviewFindings, pickFindings, fixPrompt, approvalPrompt, canApproveAwaiting, nativePath, closeSessions, sweepSessions, issueUrl,
-  launchMode, readSessions, ownerOf, resumePrompt,
+  launchMode, readSessions, ownerOf, resumePrompt, runAgent, firstSession,
 } from "./state.ts";
 import { attachPty, writePty, resizePty, ptyState, ptyKeys, adoptLoginEnv } from "./pty.ts";
 import { readSources, addSource, removeSource, moveSource, setCategory, readIcebox, promote, dismiss, markReplied, gatherSource, gatherAll, gatherDirs, due, socialUrl, socialOf } from "./sources.ts";
@@ -817,17 +817,22 @@ export async function web(repoDir: string, opts: Opts = {}) {
         }
 
         // Start a run's agent again after it ended mid-stage (crashed, closed, or a stalled
-        // run), in the conversation it had where the tool can resume one. Never beside a
-        // live in-card agent, and never on a run waiting for a decision: those have their buttons.
+        // run), in the conversation it had where the tool can resume one. A run waiting for
+        // a decision, or done, gets its conversation back with nothing sent to it -- the
+        // user talks to it -- and only when that conversation exists. Never beside a live
+        // in-card agent, never on an abandoned run.
         if (path === "/resume") {
           const id = String(body.id ?? "");
           if (!/^[\w.-]+$/.test(id)) return bad("bad run id");
           if (dir === join(home, ".kaizen")) return bad("no project to run in", 409);
           let run: any;
           try { run = JSON.parse(readText(join(dir, "runs", id, "state.json"))); } catch { return bad("no such run", 404); }
-          if (run.stage === "done" || run.stage === "abandoned" || run.awaiting) return bad("this run is not waiting to be resumed", 409);
+          if (run.stage === "abandoned") return bad("this run was abandoned", 409);
           if (readSessions(dir).some((s) => ptyState(s.key)?.alive && ownerOf(dir, s) === id)) return bad("its agent is still running in its card", 409);
-          const text = resumePrompt(id);
+          const quiet = run.stage === "done" || !!run.awaiting;
+          const own = quiet ? runAgent(dir, id) : null;
+          if (quiet && !(own && firstSession(dir, id, own.cmd, projectOf(dir)))) return bad("no conversation of this run to resume", 409);
+          const text = quiet ? "" : resumePrompt(id);
           const before = Date.now();
           const r = launchRun({ severity: null, where: null, text, raw: text }, dir, id, inCard(dir));
           if (r.ok) closeSessions(dir, id, { before });
