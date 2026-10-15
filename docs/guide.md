@@ -136,7 +136,7 @@ serves the same board on `http://127.0.0.1:7420/` — loopback only, no account 
 opens it in a tab of your default browser. Set **Open the board in** to `app` in
 `kaizen settings` for a Chromium-family app window instead (no tabs or address bar).
 
-<img src="https://raw.githubusercontent.com/hfadhlullah/kaizen/c858bb6d666a65780d09c06032c8819489b87da5/assets/board.png" alt="kaizen web board" width="760">
+<img src="https://raw.githubusercontent.com/hfadhlullah/kaizen/main/assets/board-v2.png" alt="kaizen web board" width="760">
 
 Same columns, same files: an idea added here lands in `inbox.md`, a run
 started here opens your agent in a new terminal exactly as `r` does (a new herdr tab
