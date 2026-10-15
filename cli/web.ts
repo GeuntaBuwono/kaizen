@@ -17,6 +17,7 @@ import { listNotes, saveNote, renameNote, deleteNote, boardIndex, linksTo } from
 const PAGE = join(dirname(import.meta.dir), "web", "board.html");
 // The notebook: its page, and the CodeMirror bundle `bun run build:web` commits beside it.
 const NOTES_PAGE = join(dirname(import.meta.dir), "web", "notes.html");
+const ICO = join(dirname(import.meta.dir), "assets", "kaizen.ico");
 const NOTES_JS = join(dirname(import.meta.dir), "web", "notebook.js");
 // The in-card terminal (agent.launch: card): xterm.js, bundled the same way.
 const TERM_JS = join(dirname(import.meta.dir), "web", "term.js");
@@ -307,7 +308,13 @@ export async function web(repoDir: string, opts: Opts = {}) {
         return json(boardIndex(dir));
       }
 
-      // The icon on a web notification; this one file and nothing beside it.
+      // The tab's icon: small sizes from the .ico, the logo for anything bigger.
+      if (req.method === "GET" && path === "/favicon.ico") {
+        if (!existsSync(ICO)) return bad("no icon", 404);
+        return new Response(Bun.file(ICO), { headers: { "content-type": "image/x-icon", "cache-control": "max-age=86400" } });
+      }
+
+      // The icon on a web notification and the large app icon.
       if (req.method === "GET" && path === "/logo.png") {
         if (!existsSync(LOGO)) return bad("no logo", 404);
         return new Response(Bun.file(LOGO), { headers: { "content-type": "image/png", "cache-control": "max-age=86400" } });
