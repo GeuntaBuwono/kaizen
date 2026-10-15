@@ -4,6 +4,10 @@
 
 <p align="center"><b>See the plan before your AI starts. Get a second opinion when it is done.</b></p>
 
+<p align="center">
+  <a href="https://github.com/hfadhlullah/kaizen/actions/workflows/test.yml"><img alt="CI" src="https://github.com/hfadhlullah/kaizen/actions/workflows/test.yml/badge.svg"></a>
+</p>
+
 **The problem:** an AI agent starts writing before you agree on what it should do, then grades its own work.
 
 **Kaizen:** it plans first and waits for your approval, then an agent that never saw the work reviews it.
@@ -29,6 +33,8 @@ irm bun.sh/install.ps1 | iex; & "$env:USERPROFILE\.bun\bin\bunx.exe" kaizen-agen
 ```
 
 Already have Bun? Run `bunx kaizen-agent`. As on macOS and Linux you need an AI coding agent; Git is only needed for the board's commit and push.
+
+Later: `kaizen upgrade` for a new version, `kaizen uninstall` to take it off — [the guide](docs/guide.md) has both in full.
 
 ## Use the board
 
@@ -78,7 +84,7 @@ bun run build:web         # rewrites web/notebook.js; a test fails if it goes st
 | `bot/` | Kaizen Bot — a separate private package with its own tests and build. See [its README](bot/README.md). |
 | `docs/` | The guide and internal notes, indexed in [`docs/README.md`](docs/README.md). |
 | `design.md` | Design notes for the repo. |
-| `.kaizen/` | This repo's own runs — kaizen is built with kaizen. Gitignored: a fresh clone gets it on its first run. |
+| `.kaizen/` | This repo's own runs — kaizen is built with kaizen. Run state is gitignored; the notes vault in `.kaizen/notes/Project/` is committed. |
 
 ### Kaizen Bot
 
@@ -92,7 +98,7 @@ bun run build             # the desktop app, into dist/
 
 ### Contributing
 
-Pull requests; CI runs `bun test` on Ubuntu and Windows and it must pass. For non-trivial work, dogfood: `/kaizen <change>` in this repo plans, builds and reviews it — [`skills/kaizen/spec.md`](skills/kaizen/spec.md) is the contract the stages follow.
+Pull requests; CI runs `bun test` on the OS matrix in [`.github/workflows/test.yml`](.github/workflows/test.yml) and it must pass. For non-trivial work, dogfood: `/kaizen <change>` in this repo plans, builds and reviews it — [`skills/kaizen/spec.md`](skills/kaizen/spec.md) is the contract the stages follow.
 
 ## License
 

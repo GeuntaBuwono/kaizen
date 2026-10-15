@@ -9,7 +9,7 @@ Small tool, small rules.
 
 ## Changes
 
-- **Tests must pass.** CI runs `bun test` on Ubuntu and Windows. Touched
+- **Tests must pass.** CI runs `bun test` on the OS matrix in [`.github/workflows/test.yml`](.github/workflows/test.yml). Touched
   `web/notebook.ts` or `web/notes-lib.ts`? Rebuild with `bun run build:web` — a test
   fails on a stale bundle either way.
 - **Non-trivial work, dogfood.** Start a run in this repo — `/kaizen <change>` — and

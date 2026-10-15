@@ -14,7 +14,7 @@ when you need the next thing.
 
 - [`skills/kaizen/SKILL.md`](../skills/kaizen/SKILL.md) — how the workflow behaves: the stages, who runs them, the files a run writes.
 - [`skills/kaizen/spec.md`](../skills/kaizen/spec.md) — the tool-neutral contract every stage follows; the `spec-*.md` files beside it are each stage's own contract.
-- [`skills/kaizen/adapters.md`](../skills/kaizen/adapters.md) — running the same workflow under Codex, Antigravity, OpenCode, Cursor and Gemini CLI.
+- [`skills/kaizen/adapters.md`](../skills/kaizen/adapters.md) — running the same workflow outside Claude Code, with Codex and Antigravity as the worked examples.
 - [`skills/kaizen/config.default.yml`](../skills/kaizen/config.default.yml) — every setting, with a comment on each key.
 - [`skills/kaizen-help/SKILL.md`](../skills/kaizen-help/SKILL.md) — the full command card.
 

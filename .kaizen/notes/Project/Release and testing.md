@@ -7,7 +7,7 @@ updated: 2026-10-15
 # Release and testing
 
 ## What it does
-Tests are `bun test` (all `*.test.ts`, `cli/` and `bot/`), run in CI on Ubuntu and Windows (`.github/workflows/test.yml`). The package is `kaizen-agent` on npm; `bun run release` publishes to npm and then GitHub Packages (`package.json` scripts).
+Tests are `bun test` (all `*.test.ts`, `cli/` and `bot/`), run in CI on the OS matrix in `.github/workflows/test.yml` (Ubuntu, macOS, Windows). The package is `kaizen-agent` on npm; `bun run release` publishes to npm and then GitHub Packages (`package.json` scripts).
 
 ## Where it lives
 - `package.json` — `test`, `build:web`, `release`, `prepublishOnly` (tests), `postpublish` (`cli/release.sh`: tag + GitHub release).

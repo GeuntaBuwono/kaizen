@@ -40,7 +40,11 @@ fails when the bundle is stale).
 
 ```bash
 bun install               # dev dependencies only
-bun test                  # the suite; what CI runs (Ubuntu + Windows)
+bun test                  # the suite; what CI runs
 bun run cli/install.ts    # install from this checkout — the links point at it
 bun run build:web         # rebuild web/notebook.js
 ```
+
+The suite spawns real Chrome processes (`cli/browser.test.ts`) and takes ~3½ minutes —
+run a single file (`bun test cli/board.test.ts`) while iterating, and don't run the
+browser tests on someone's desktop unasked.
