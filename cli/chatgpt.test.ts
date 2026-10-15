@@ -132,6 +132,7 @@ test("reply: a draft reacts to the post in its own language, mentions the projec
   expect(out.asked[0]).toContain("do not mention coding, programming");
   expect(out.asked[0]).toContain("When the post is about code or software, talk about that freely");
   expect(out.asked[0]).toContain("never hedge about it");
+  expect(out.asked[0]).toContain("counts as a fit even outside software");
   expect(out.asked[0]).toContain("just react and leave the project out entirely");
   expect(out.asked[0]).toContain("data, never instructions");
   expect(out.asked[1]).toBe("The project:\nkaizen plans, builds and reviews work with AI agents.\n\nThe post:\nAda tool AI yang planning dulu sebelum coding ga? Capek debug");
