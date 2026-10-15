@@ -645,7 +645,9 @@ export async function web(repoDir: string, opts: Opts = {}) {
           if (!link) return bad("this item is not a social post");
           if (body.op === "draft") {
             if (!chatgpt.status().connected) return json({ ok: true, text: "", note: "Connect ChatGPT to get a draft, or write the reply yourself." });
-            const d = await chatgpt.draftReply(body.dir, it.text, await setting("sources.model"), (await setting("sources.effort")) || "low");
+            const style = typeof body.style === "string" && Object.hasOwn(chatgpt.REPLY_STYLES, body.style) ? body.style : "casual";
+            const avoid = typeof body.avoid === "string" ? body.avoid.slice(0, 600) : "";
+            const d = await chatgpt.draftReply(body.dir, it.text, await setting("sources.model"), (await setting("sources.effort")) || "low", style, avoid);
             return json(d.ok ? d : { ok: true, text: "", note: d.note });
           }
           if (body.op !== "send") return bad("unknown op");

@@ -231,10 +231,12 @@ becomes its own idea, titled as gathered). Keys: `j`/`k` move, `o` opens, `x` ch
 requests that ask for the same thing, drafts one idea per need, and promotes only the
 ones you pick (`kaizen icebox promote <ids>` underneath).
 
-A gathered social post can also be answered from its open row. **Reply** asks your
-ChatGPT plan for a draft: a short, casual reaction to the post in the post's own
-language (mixed if the post mixes languages) that mentions your project once, lightly.
-Without ChatGPT the box opens empty and you write it yourself. Edit it as you like;
+A gathered social post can also be answered from its open row. Pick a style, then
+**Reply** asks your ChatGPT plan for a draft: a short reaction to the post in the post's
+own language (mixed if the post mixes languages). **Casual** (the default) and **Fun**
+never mention your project; **Helpful** shares a tip and may name it in passing when it
+fits; **Promo** mentions it once. **Regenerate** asks for a different draft in the
+picked style. Without ChatGPT the box opens empty and you write it yourself. Edit it as you like;
 nothing is posted until you press **Send reply**, which posts exactly that text under
 the post from the account kaizen's browser is signed in to (`kaizen browser login`).
 A post is answered once: the row then shows *replied*.

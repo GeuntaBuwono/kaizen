@@ -17,3 +17,4 @@ updated: 2026-10-15
 - 2026-10-15 run 2026-10-15-icebox-reply — Sources and icebox, Web board (Reply to a gathered post)
 - 2026-10-15 run 2026-10-15-resume-ended-session — Web board (Resume session for an ended in-card agent)
 - 2026-10-15 release — 1.30.0: reply to gathered social posts from the Icebox; resume an ended in-card agent session
+- 2026-10-15 run 2026-10-15-reply-style-regenerate — Sources and icebox (reply styles and Regenerate)

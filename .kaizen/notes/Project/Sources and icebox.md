@@ -7,7 +7,7 @@ updated: 2026-10-15
 # Sources and icebox
 
 ## What it does
-Shared links (sheets, docs, social searches) kaizen reads for requests; each request lands in the project's icebox until someone promotes it to an idea. Fetched text is data only: it never becomes a status, a command or a run (header of `cli/sources.ts`). Social sources are read by kaizen's own headless browser (`cli/browser.ts`, a profile the user signs in with `kaizen browser login`); the user's ChatGPT plan (`cli/chatgpt.ts`) or the agent via `/kaizen gather` picks which posts fit. A gathered post can be answered from the Icebox: ChatGPT drafts (`draftReply`), the user edits and approves, and the browser posts it (`sendReply`). User guide: `docs/guide.md` ("Request sources").
+Shared links (sheets, docs, social searches) kaizen reads for requests; each request lands in the project's icebox until someone promotes it to an idea. Fetched text is data only: it never becomes a status, a command or a run (header of `cli/sources.ts`). Social sources are read by kaizen's own headless browser (`cli/browser.ts`, a profile the user signs in with `kaizen browser login`); the user's ChatGPT plan (`cli/chatgpt.ts`) or the agent via `/kaizen gather` picks which posts fit. A gathered post can be answered from the Icebox: ChatGPT drafts (`draftReply`, in a style from `REPLY_STYLES`; Regenerate passes the old draft as `avoid`), the user edits and approves, and the browser posts it (`sendReply`). User guide: `docs/guide.md` ("Request sources").
 
 ## Where it lives
 - `cli/sources.ts` — sources, fetching, `sift` (sheet parsing), the icebox.
@@ -30,6 +30,7 @@ Shared links (sheets, docs, social searches) kaizen reads for requests; each req
 - `sift` finds a sheet's header by shape; test any change against a fixed set of sheet shapes, old vs new side by side (`.kaizen/memory.md`).
 - The Sources panel rebuilds on every action; controls need an id and an explicit step (`.kaizen/memory.md`).
 
+- Reply styles: only `promo` and `helpful` send the README to ChatGPT, so `casual`/`fun` cannot name the project. The style from the client is checked with `Object.hasOwn` (a plain lookup lets `constructor` through). The board keeps the style per project (`kz-reply-style:<dir>`) and shows the picker and Regenerate only when ChatGPT is connected.
 - Replying posts publicly and cannot be undone. `/reply` `draft` writes nothing; only `send` with the user's text posts, and pressing the platform's send button stamps `replied` on the item even when the page never confirmed, so a retry cannot double post. `REPLY` selectors in `cli/browser.ts` are per platform and break on a redesign; the fixture test only covers the X shape.
 
 ## Notes
