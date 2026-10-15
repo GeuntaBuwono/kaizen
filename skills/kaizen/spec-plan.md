@@ -8,7 +8,9 @@ planner's and the plan approval's contract. The builder and reviewer do not read
 
 **Agent:** planner. **Input:** `00-request.md` (including the track), `notes.md` in
 the run directory when present — links, paths, and background the user attached from
-the board, binding like the request itself — `memory.md`, and the existing material —
+the board, binding like the request itself — `memory.md`, `notes/Project/Index.md` in the state
+directory when present — the project's map, written by `/kaizen docs`; open only the
+notes it lists for areas the request touches — and the existing material —
 the codebase, the manuscript, the current campaign, whatever this run builds on.
 **Output:** `01-plan.md`.
 

@@ -1,9 +1,13 @@
 node_modules/
 
-# kaizen's run state. Unlike other projects, nothing under .kaizen/ is committed
-# here: its spec*.md and config.yml are copies of skills/kaizen/, which is the
-# source, and committing both is how the two drift apart.
-.kaizen/
+# kaizen's run state. Unlike other projects, the spec*.md and config.yml under
+# .kaizen/ are not committed here: they are copies of skills/kaizen/, which is the
+# source, and committing both is how the two drift apart. The docs vault that
+# /kaizen docs writes (notes/Project/) is committed; the rest of the notebook is not.
+.kaizen/*
+!.kaizen/notes/
+.kaizen/notes/*
+!.kaizen/notes/Project/
 .npmrc
 
 # Kaizen Bot: its API key and local database never leave this machine.

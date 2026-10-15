@@ -60,6 +60,13 @@ operational work: missing prerequisites, absent rollback, steps that cannot be
 executed as written. The plan's Verification section says what was promised; the
 reviewer checks that promise was kept.
 
+**Where the run touched the docs vault** (`notes/Project/` in the state directory,
+named in `03-impl.md`), check each edited claim against the changed material: a note
+claim the work contradicts is a `medium` finding, and so is an edited `## Notes`
+section. Where the vault exists and a file the run changed is listed in a note's
+`sources` but the note was not touched, check whether the change made it untrue: if it
+did, that is a `low` finding.
+
 **Keep the working transcript small.** Everything the reviewer reads stays in its
 context and is re-read on every request that follows, so the re-run suite dumped in
 full at check 4 is paid for again at every check after it. Pipe long output through a

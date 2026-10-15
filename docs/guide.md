@@ -73,6 +73,7 @@ tells you what it concluded, so you correct a sentence instead of filling in a f
 | `/kaizen-abort` | Abandon the current run |
 | `/kaizen-gather` | Read the request sources kaizen cannot read by itself into the icebox |
 | `/kaizen-discover` | An agent groups what is in the icebox, proposes ideas, and promotes the ones you pick |
+| `/kaizen-docs [lint]` | Write or refresh this project's docs in Notes → `Project/`, which agents read before they build; `lint` lists stale notes and broken links |
 | `kaizen sources [add\|rm <link>]` | In a terminal: list, add or remove request sources |
 | `kaizen gather` | In a terminal: check every source now and add new requests to the icebox |
 | `kaizen icebox [promote\|dismiss <ids>]` | In a terminal: list what waits in the icebox, promote it to Ideas, or dismiss it |

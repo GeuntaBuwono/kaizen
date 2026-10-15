@@ -898,11 +898,13 @@ function initProject() {
   // ~/.kaizen/config.yml, so a setting changed once applies everywhere. Write one
   // only to make this project deliberately different.
 
-  // Run state is local; the workflow itself is shared, so those files stay tracked.
+  // Run state is local; the workflow itself is shared, so those files stay tracked,
+  // and so does the docs vault /kaizen docs writes (notes/Project/), while the rest of
+  // the notebook stays personal. install.test.ts checks these rules with git itself.
   // Nothing to ignore where there is no git, so a plain folder gets no .gitignore.
   let ignored = false;
   if (existsSync(join(process.cwd(), ".git"))) {
-    const rules = ".kaizen/*\n!.kaizen/spec*.md\n!.kaizen/config.yml\n";
+    const rules = ".kaizen/*\n!.kaizen/spec*.md\n!.kaizen/config.yml\n!.kaizen/notes/\n.kaizen/notes/*\n!.kaizen/notes/Project/\n";
     const gi = join(process.cwd(), ".gitignore");
     const current = existsSync(gi) ? readFileSync(gi, "utf8") : "";
     if (!current.includes(".kaizen/*")) {

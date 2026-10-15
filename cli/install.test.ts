@@ -138,3 +138,24 @@ it("upgrade with npm unreachable says not upgraded, never up to date", () => {
   expect(p.stdout.toString()).toContain("Not upgraded");
   expect(p.stdout.toString()).not.toContain("Up to date");
 });
+
+// initProject() runs only at the end of a full install, so its gitignore rules are read
+// from the source and handed to git: what git ignores is the only answer that counts.
+it("init's gitignore keeps run state and personal notes out, the docs vault in", () => {
+  const src = readFileSync(script, "utf8");
+  const rules = JSON.parse(src.match(/const rules = (".kaizen\/\*[^"]*");/)![1]!);
+  const proj = mkdtempSync(join(tmpdir(), "kz-ignore-"));
+  Bun.spawnSync(["git", "init", "-q", proj]);
+  writeFileSync(join(proj, ".gitignore"), rules);
+  const ignored = (p: string) => Bun.spawnSync(["git", "-C", proj, "check-ignore", "-q", p]).exitCode === 0;
+  try {
+    expect(ignored(".kaizen/runs/x/state.json")).toBe(true);
+    expect(ignored(".kaizen/memory.md")).toBe(true);
+    expect(ignored(".kaizen/notes/Standup.md")).toBe(true);
+    expect(ignored(".kaizen/notes/Work/Standup.md")).toBe(true);
+    expect(ignored(".kaizen/spec.md")).toBe(false);
+    expect(ignored(".kaizen/config.yml")).toBe(false);
+    expect(ignored(".kaizen/notes/Project/Index.md")).toBe(false);
+    expect(ignored(".kaizen/notes/Project/Archive/Old.md")).toBe(false);
+  } finally { rmSync(proj, { recursive: true, force: true }); }
+});

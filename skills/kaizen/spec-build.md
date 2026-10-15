@@ -69,6 +69,16 @@ for reading material: open the manifest's paths at the ranges the plan names, no
 files, and never re-read a file this stage already changed. `03-impl.md` records the
 result, not the transcript.
 
+**Keep the project's docs vault current.** Where `notes/Project/Index.md` exists in the
+state directory (see `/kaizen docs`), every note there lists the files it describes in
+its `sources`. For each note whose `sources` include a file this run changed, re-read
+the note, correct what the change made untrue or left out — never the `## Notes`
+section, which is the user's — and set its `updated` to today. Refresh the note's line
+in `Index.md` if its `description` changed, and append one line to `Log.md`:
+`- YYYY-MM-DD run <id> — <notes touched>`. Name the notes touched in `03-impl.md`. A
+change no note covers is not written up here: say "suggest `/kaizen docs`" in
+`03-impl.md` and leave the vault alone. No Index, nothing to do.
+
 **Read the plan's File manifest instead of searching.** The planner already located
 every path this run touches. Search the material only for what the manifest does not
 cover, and note in `03-impl.md` what was missing from it.
