@@ -41,7 +41,9 @@ Five checks are universal, in every track:
 4. **Regression** — the builder's before-and-after results from `03-impl.md`, verified
    rather than trusted: re-run the checks. A check that passed at baseline and fails
    now is a `high` finding at minimum, whatever else the work achieved. If the builder
-   recorded no baseline, that absence is itself the finding.
+   recorded no baseline, that absence is itself the finding. So is a `03-impl.md`
+   without a `## Preview` section, or one without `### How to test` steps: `medium`,
+   since the user is left with no way to try the work.
 
 5. **Acceptance** — every criterion, `G-nn` and `R-nn`, answered against the work
    rather than against `03-impl.md`, by trying to falsify it: name the concrete check

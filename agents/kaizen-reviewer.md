@@ -77,7 +77,9 @@ Two checks are universal:
    trust the report. A check that passed at that baseline and fails now is `high` at
    minimum, whatever else the work achieved. If the builder recorded no baseline, that
    absence is the finding: `03-impl.md: high: no baseline recorded, regression
-   unprovable. Run the existing suite and compare.`
+   unprovable. Run the existing suite and compare.` A `03-impl.md` with no
+   `## Preview` section, or none of its `### How to test` steps, is `medium`: the
+   user has no way to try the work.
 
 Then the track's own checks:
 

@@ -75,7 +75,10 @@ cover, and note in `03-impl.md` what was missing from it.
 
 `03-impl.md` must list: what was produced or changed with a one-line reason each,
 deviations from the plan and why, verification carried out with its actual result,
-and anything deliberately left undone. Write each changed path in backticks, relative
+anything deliberately left undone, a `## Preview` section with its `### How to test`
+steps, and — in a git repository — a `## Commit` section, both described below. A
+report without `## Preview` leaves the board's Preview tab empty, in every runner and
+on the direct path alike. Write each changed path in backticks, relative
 to the repository, and no other path that way: the board commits a run by the changed
 files its report names, so a changed path written any other way is left out of the
 commit, and a backticked path the run did not change is taken into it. Report failures honestly; a false claim of
